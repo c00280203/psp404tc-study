@@ -1,0 +1,1930 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Human–AI Transparency Study · PSP404TC Lab5R</title>
+<style>
+  :root{
+    --bg:#fbfbfc; --card:#ffffff; --ink:#0f1115; --muted:#6b7280; --faint:#9aa1ab;
+    --line:#e7e8ec; --line-2:#d8dae0; --accent:#1f6feb; --accent-soft:#eef4ff;
+    --warn:#8a5b0d; --warn-soft:#fdf8ef; --warn-line:#f0e3c8;
+    --r:16px;
+  }
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent}
+  html,body{margin:0;padding:0}
+  body{
+    background:var(--bg); color:var(--ink); font-size:16.5px; line-height:1.68;
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Inter","PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+    -webkit-font-smoothing:antialiased; text-rendering:optimizeLegibility;
+  }
+  /* ---------- top bar ---------- */
+  .top{position:sticky; top:0; z-index:30; background:rgba(251,251,252,.86); backdrop-filter:saturate(180%) blur(12px)}
+  .top .line{height:2px; background:#eceef1}
+  .top .line i{display:block; height:100%; width:0; background:var(--ink); transition:width .5s cubic-bezier(.4,0,.2,1)}
+  .top .inner{max-width:760px; margin:0 auto; padding:13px 24px; display:flex; align-items:center; gap:16px}
+  .mark{font-size:12.5px; letter-spacing:.14em; text-transform:uppercase; color:var(--faint); font-weight:600}
+  .spacer{flex:1}
+  .lang{display:flex; border:1px solid var(--line); border-radius:999px; padding:2px; background:#fff}
+  .lang button{
+    border:0; background:transparent; font:inherit; font-size:12.5px; color:var(--muted);
+    height:34px; padding:0 14px; display:inline-flex; align-items:center;
+    border-radius:999px; cursor:pointer; transition:.18s; letter-spacing:.02em;
+  }
+  .lang button.on{background:var(--ink); color:#fff}
+  .step{font-size:12.5px; color:var(--faint); font-variant-numeric:tabular-nums; letter-spacing:.04em}
+  /* ---------- layout ---------- */
+  .stage{max-width:760px; margin:0 auto; padding:34px 24px 80px}
+  .sheet{
+    background:var(--card); border:1px solid var(--line); border-radius:var(--r);
+    padding:44px 48px; animation:rise .34s cubic-bezier(.2,.7,.3,1);
+  }
+  @keyframes rise{from{opacity:0; transform:translateY(10px)} to{opacity:1; transform:none}}
+  /* 渐进式入场：只做 backwards 填充，动画结束后不锁死 transform，保证 hover 仍生效 */
+  @keyframes pop{from{opacity:0; transform:translateY(8px)}}
+  @keyframes zin{from{opacity:0; transform:scale(.86)}}
+  @keyframes pulse{0%{transform:scale(.55)} 60%{transform:scale(1.18)} 100%{transform:scale(1)}}
+  .opt{animation:pop .42s cubic-bezier(.2,.7,.3,1) backwards}
+  .opts .opt:nth-child(1){animation-delay:.04s}
+  .opts .opt:nth-child(2){animation-delay:.10s}
+  .opts .opt:nth-child(3){animation-delay:.16s}
+  .opts .opt:nth-child(4){animation-delay:.22s}
+  .scale button{animation:zin .32s cubic-bezier(.2,.7,.3,1) backwards}
+  .scale button:nth-child(1){animation-delay:.02s}
+  .scale button:nth-child(2){animation-delay:.05s}
+  .scale button:nth-child(3){animation-delay:.08s}
+  .scale button:nth-child(4){animation-delay:.11s}
+  .scale button:nth-child(5){animation-delay:.14s}
+  .scale button:nth-child(6){animation-delay:.17s}
+  .scale button:nth-child(7){animation-delay:.20s}
+  .lk{animation:pop .4s cubic-bezier(.2,.7,.3,1) backwards}
+  .lk:nth-of-type(2){animation-delay:.06s}
+  .lk:nth-of-type(3){animation-delay:.12s}
+  .lk:nth-of-type(4){animation-delay:.18s}
+  .opt.chosen .dot{animation:pulse .38s cubic-bezier(.3,1.4,.5,1)}
+  .ai{animation:pop .4s cubic-bezier(.2,.7,.3,1) backwards; animation-delay:.06s}
+  .cd{animation:pop .35s cubic-bezier(.2,.7,.3,1) backwards}
+  .check-mark{width:52px; height:52px; margin-bottom:20px}
+  .check-mark circle{
+    fill:none; stroke:var(--ink); stroke-width:2; stroke-linecap:round;
+    stroke-dasharray:150; stroke-dashoffset:150; animation:draw .6s .1s cubic-bezier(.5,0,.3,1) forwards;
+  }
+  .check-mark path{
+    fill:none; stroke:var(--ink); stroke-width:2.4; stroke-linecap:round; stroke-linejoin:round;
+    stroke-dasharray:40; stroke-dashoffset:40; animation:draw .45s .55s cubic-bezier(.5,0,.3,1) forwards;
+  }
+  @keyframes draw{to{stroke-dashoffset:0}}
+  .cdbar i{transition:width .12s linear, background .3s}
+  .cd.urgent{border-color:#f0c9b4; background:#fdf1ea}
+  .cd.urgent .cdtop{color:#8a3d13}
+  .cd.urgent .cdbar{background:#f3d8c8}
+  .cd.urgent .cdbar i{background:#c2410c}
+  .cd.urgent .cdtop b{color:#8a3d13}
+  /* ---------- 提交状态 ---------- */
+  .sub{
+    display:flex; align-items:flex-start; gap:13px; margin:26px 0 0; padding:17px 19px;
+    border:1px solid var(--line); border-radius:13px; background:#fff; font-size:14px; line-height:1.5;
+    animation:pop .35s cubic-bezier(.2,.7,.3,1) backwards;
+  }
+  .sub .dotx{flex:0 0 auto; width:17px; height:17px; margin-top:2px; border-radius:50%; border:2px solid var(--line-2); position:relative}
+  .sub.busy .dotx{border-color:var(--ink); border-right-color:transparent; animation:spin .75s linear infinite}
+  .sub.ok .dotx{border-color:#1c7c4a; background:#1c7c4a}
+  .sub.ok .dotx::after{content:""; position:absolute; left:4.5px; top:1.5px; width:4px; height:7.5px;
+    border:solid #fff; border-width:0 2px 2px 0; transform:rotate(42deg)}
+  .sub.bad{border-color:var(--warn-line); background:var(--warn-soft)}
+  .sub.bad .dotx{border-color:#c2410c}
+  .sub.bad .dotx::before,.sub.bad .dotx::after{content:""; position:absolute; left:7px; top:1px; width:2px; height:11px; background:#c2410c; border-radius:1px}
+  .sub.bad .dotx::before{transform:rotate(45deg)} .sub.bad .dotx::after{transform:rotate(-45deg)}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  .sub b{font-weight:600}
+  .sub .subtxt{flex:1; min-width:0}
+  .sub .subtxt .small{display:block; margin-top:3px; color:var(--muted)}
+  .sub.bad .subtxt .small{color:var(--warn)}
+  h1{font-size:31px; line-height:1.25; letter-spacing:-.025em; font-weight:640; margin:0 0 10px}
+  h2{font-size:25px; line-height:1.3; letter-spacing:-.02em; font-weight:620; margin:0 0 16px}
+  h3{font-size:14px; letter-spacing:.06em; text-transform:uppercase; color:var(--faint); font-weight:600; margin:34px 0 10px}
+  p{margin:0 0 15px}
+  .dim{color:var(--muted)}
+  .small{font-size:13.5px; color:var(--muted)}
+  ul{margin:0 0 16px; padding-left:20px}
+  li{margin:0 0 9px}
+  li::marker{color:var(--faint)}
+  hr{border:0; border-top:1px solid var(--line); margin:30px 0}
+  /* ---------- buttons ---------- */
+  .btn{
+    font:inherit; font-size:15px; font-weight:520; color:var(--ink); background:#fff;
+    border:1px solid var(--line-2); border-radius:11px; padding:13px 24px; cursor:pointer;
+    transition:transform .12s ease, background .18s, border-color .18s, box-shadow .18s;
+  }
+  .btn:hover{background:#f7f8f9; border-color:#c6c9d0}
+  .btn:active{transform:scale(.975)}
+  .btn.solid{background:var(--ink); border-color:var(--ink); color:#fff}
+  .btn.solid:hover{background:#252a33; border-color:#252a33; box-shadow:0 4px 14px rgba(15,17,21,.16)}
+  .btn.quiet{border-color:transparent; background:transparent; color:var(--muted)}
+  .btn.quiet:hover{background:#f2f3f5; color:var(--ink)}
+  .btn:disabled{opacity:.32; cursor:not-allowed; transform:none; box-shadow:none}
+  .row{display:flex; gap:11px; flex-wrap:wrap; align-items:center; margin-top:30px}
+  .row.end{justify-content:flex-end}
+  /* ---------- form ---------- */
+  .grid2{display:grid; grid-template-columns:1fr 1fr; gap:16px}
+  .field{margin:0 0 20px}
+  .field label{display:block; font-size:13.5px; color:var(--muted); margin-bottom:8px}
+  input[type=text], select, textarea{
+    width:100%; font:inherit; font-size:15.5px; color:var(--ink); background:#fff;
+    border:1px solid var(--line-2); border-radius:11px; padding:12px 15px; transition:.18s;
+  }
+  input[type=text]:focus, select:focus, textarea:focus{
+    outline:0; border-color:var(--ink); box-shadow:0 0 0 3px rgba(15,17,21,.06)
+  }
+  textarea{min-height:96px; resize:vertical; line-height:1.6}
+  .hint{font-size:12.5px; color:var(--faint); margin-top:7px}
+  /* ---------- 分段选择（代替下拉框） ---------- */
+  .seg{display:flex; flex-wrap:wrap; gap:8px}
+  .segbtn{
+    font:inherit; font-size:14.5px; color:var(--ink); background:#fff;
+    border:1px solid var(--line-2); border-radius:999px; padding:10px 18px; cursor:pointer;
+    transition:transform .14s cubic-bezier(.2,.7,.3,1), background .16s, border-color .16s, color .16s, box-shadow .16s;
+    animation:pop .34s cubic-bezier(.2,.7,.3,1) backwards;
+  }
+  .seg .segbtn:nth-child(1){animation-delay:.03s}
+  .seg .segbtn:nth-child(2){animation-delay:.07s}
+  .seg .segbtn:nth-child(3){animation-delay:.11s}
+  .seg .segbtn:nth-child(4){animation-delay:.15s}
+  .seg .segbtn:nth-child(5){animation-delay:.19s}
+  .seg .segbtn:nth-child(6){animation-delay:.23s}
+  .seg .segbtn:nth-child(7){animation-delay:.27s}
+  .seg .segbtn:nth-child(8){animation-delay:.31s}
+  .segbtn:hover{border-color:#c6c9d0; background:#f7f8f9; transform:translateY(-1px)}
+  .segbtn:active{transform:scale(.94)}
+  .segbtn.on{background:var(--ink); border-color:var(--ink); color:#fff; box-shadow:0 3px 12px rgba(15,17,21,.18)}
+  .segbtn.on:hover{background:#252a33}
+  @keyframes repop{0%{transform:scale(.9)} 55%{transform:scale(1.07)} 100%{transform:scale(1)}}
+  .segbtn.repop{animation:repop .32s cubic-bezier(.3,1.4,.5,1)}
+  /* ---------- 版本标签 / 组间过渡 ---------- */
+  .verchip{
+    display:inline-flex; align-items:center; gap:8px; background:var(--accent-soft);
+    color:#1a4faa; padding:8px 15px; border-radius:999px; font-size:13.5px; margin:0 0 24px;
+    animation:pop .34s cubic-bezier(.2,.7,.3,1) backwards; animation-delay:.08s;
+  }
+  .verchip b{font-weight:600}
+  .vercard{
+    border:1px solid var(--line); border-radius:14px; padding:20px 22px; margin:24px 0 4px;
+    animation:pop .38s cubic-bezier(.2,.7,.3,1) backwards; animation-delay:.1s;
+  }
+  .vercard .vlab{display:block; font-size:12px; letter-spacing:.1em; text-transform:uppercase; color:var(--faint); margin-bottom:6px}
+  .vercard b{display:block; font-size:19px; font-weight:620; letter-spacing:-.01em}
+  .vercard .vdesc{display:block; font-size:14px; color:var(--muted); margin-top:5px}
+  .vercard .vnote{
+    display:block; margin-top:14px; padding-top:14px; border-top:1px dashed var(--line);
+    font-size:13.5px; color:var(--warn);
+  }
+  .check{display:flex; gap:13px; align-items:flex-start; cursor:pointer; padding:16px 18px; border:1px solid var(--line-2); border-radius:12px; transition:.18s}
+  .check:hover{border-color:#c6c9d0; background:#fafbfc}
+  .check input{margin:4px 0 0; width:21px; height:21px; accent-color:var(--ink); flex:0 0 auto; cursor:pointer}
+  .check span{font-size:15px}
+  /* ---------- notice ---------- */
+  .note{border:1px solid var(--line); background:#fafbfc; border-radius:12px; padding:18px 20px; font-size:14.5px}
+  .note.warn{background:var(--warn-soft); border-color:var(--warn-line); color:#6b4a12}
+  .note ul{margin:8px 0 0}
+  /* ---------- meta chip ---------- */
+  .meta{display:flex; align-items:center; gap:10px; margin-bottom:22px; flex-wrap:wrap}
+  .chip{font-size:11.5px; letter-spacing:.1em; text-transform:uppercase; font-weight:650; padding:4px 10px; border-radius:6px; background:#f2f3f5; color:var(--muted)}
+  .chip.a{background:#eef4ff; color:#1f57c3}
+  .chip.b{background:#f4efff; color:#5b3bc7}
+  .chip.c{background:#edf8f2; color:#0f7b4f}
+  .counter{font-size:12.5px; color:var(--faint); letter-spacing:.05em; margin-left:auto; font-variant-numeric:tabular-nums}
+  /* ---------- data table ---------- */
+  .tw{overflow-x:auto; margin:0 0 22px}
+  table.data{border-collapse:collapse; font-size:14px; font-variant-numeric:tabular-nums; white-space:nowrap; width:100%}
+  table.data th, table.data td{border:1px solid var(--line); padding:9px 13px; text-align:center}
+  table.data th{background:#fafbfc; font-weight:560; color:var(--muted); font-size:12px; letter-spacing:.04em}
+  table.data td{font-weight:560}
+  /* ---------- AI card ---------- */
+  .ai{border:1px solid var(--line); border-radius:14px; padding:20px 22px; background:#fcfcfd; margin:0 0 20px}
+  .aihead{display:flex; align-items:center; gap:10px; margin-bottom:11px}
+  .av{width:26px; height:26px; border-radius:8px; background:var(--ink); color:#fff; display:flex; align-items:center; justify-content:center; font-size:10.5px; font-weight:700; letter-spacing:.04em}
+  .aname{font-size:13px; font-weight:600}
+  .aname em{font-style:normal; color:var(--faint); font-weight:400; margin-left:7px}
+  .atext{font-size:16.5px; line-height:1.6}
+  .conf{display:flex; align-items:center; gap:12px; margin-top:15px; padding-top:15px; border-top:1px dashed var(--line); font-size:12.5px; color:var(--muted); flex-wrap:wrap}
+  .meter{flex:0 0 110px; height:5px; border-radius:99px; background:#eceef1; overflow:hidden}
+  .meter i{display:block; height:100%; background:#c8932e; border-radius:99px; transition:width .4s}
+  .conf b{color:#8a5b0d; font-variant-numeric:tabular-nums; font-size:13px}
+  .excerpt{font-size:14.5px; color:#39414d; background:#fafbfc; border-left:2px solid var(--line-2); padding:14px 18px; margin-bottom:18px; border-radius:0 10px 10px 0}
+  .score{display:flex; align-items:baseline; gap:9px; margin:2px 0 4px}
+  .score b{font-size:38px; font-variant-numeric:tabular-nums; letter-spacing:-.03em; line-height:1.1}
+  .score span{color:var(--faint); font-size:13px}
+  .bd{list-style:none; padding:15px 0 0; margin:12px 0 0; border-top:1px dashed var(--line)}
+  .bd li{display:flex; align-items:center; gap:14px; font-size:13px; color:var(--muted); margin-bottom:10px}
+  .bd .kk{flex:0 0 96px}
+  .bd .bb{flex:1; height:4px; background:#eceef1; border-radius:99px; overflow:hidden}
+  .bd .bb i{display:block; height:100%; background:#9aa6c4; border-radius:99px}
+  .bd .vv{flex:0 0 44px; text-align:right; font-variant-numeric:tabular-nums; color:#39414d}
+  /* ---------- options ---------- */
+  .opts{display:flex; flex-direction:column; gap:10px; margin-top:6px}
+  .opt{
+    display:flex; align-items:center; gap:14px; width:100%; text-align:left; font:inherit; font-size:15.5px;
+    background:#fff; border:1px solid var(--line-2); border-radius:12px; padding:15px 18px; cursor:pointer;
+    transition:transform .12s ease, border-color .18s, background .18s;
+  }
+  .opt:hover{border-color:#bfc3cb; background:#fafbfc}
+  .opt:active{transform:scale(.99)}
+  .opt .dot{width:15px; height:15px; border-radius:50%; border:1.5px solid var(--line-2); flex:0 0 auto; transition:.2s; position:relative}
+  .opt:hover .dot{border-color:#9aa1ab}
+  .opt.chosen{border-color:var(--ink); background:#f7f8fa}
+  .opt.chosen .dot{border-color:var(--ink); background:var(--ink); box-shadow:inset 0 0 0 3px #fff}
+  .opt .k{font-size:12px; color:var(--faint); min-width:16px; font-variant-numeric:tabular-nums}
+  /* ---------- countdown ---------- */
+  .cd{margin-top:18px; border:1px solid var(--warn-line); background:var(--warn-soft); border-radius:12px; padding:15px 18px}
+  .cdtop{display:flex; align-items:baseline; gap:9px; font-size:13.5px; color:#6b4a12; margin-bottom:11px}
+  .cdtop b{font-size:19px; font-variant-numeric:tabular-nums; min-width:1.3em; text-align:right; letter-spacing:-.02em}
+  .cdbar{height:3px; background:#eadfc7; border-radius:99px; overflow:hidden}
+  .cdbar i{display:block; height:100%; width:100%; background:#c8932e; border-radius:99px}
+  .cdact{display:flex; gap:9px; margin-top:14px; flex-wrap:wrap}
+  .cdact .btn{padding:9px 16px; font-size:13.5px}
+  /* ---------- likert ---------- */
+  .lk{margin:0 0 26px}
+  .lk .q{font-size:15.5px; margin-bottom:11px}
+  .scale{display:flex; gap:7px}
+  .scale button{
+    flex:1; height:44px; border:1px solid var(--line-2); background:#fff; border-radius:11px;
+    font:inherit; font-size:14px; color:var(--muted); cursor:pointer; transition:.16s; font-variant-numeric:tabular-nums;
+  }
+  .scale button:hover{border-color:#bfc3cb; color:var(--ink); background:#fafbfc}
+  .scale button.on{background:var(--ink); border-color:var(--ink); color:#fff; transform:translateY(-1px)}
+  .ends{display:flex; justify-content:space-between; font-size:11.5px; color:var(--faint); margin-top:7px; letter-spacing:.02em}
+  /* ---------- progress dots ---------- */
+  .dots{display:flex; gap:6px; margin:0 0 26px}
+  .dots i{flex:1; height:3px; border-radius:99px; background:#e7e8ec; transition:.3s}
+  .dots i.on{background:var(--ink)}
+  .dots i.now{background:#9aa1ab}
+  /* ---------- done ---------- */
+  .code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-size:26px; font-weight:650; letter-spacing:.14em; padding:12px 20px; border-radius:12px; background:var(--ink); color:#fff; display:inline-block}
+  .stats{display:flex; gap:34px; flex-wrap:wrap; margin:22px 0 0}
+  .stat b{display:block; font-size:22px; font-variant-numeric:tabular-nums; letter-spacing:-.02em}
+  .stat span{font-size:12px; color:var(--faint); letter-spacing:.06em; text-transform:uppercase}
+  /* ---------- modal ---------- */
+  .modal{position:fixed; inset:0; background:rgba(15,17,21,.42); display:none; align-items:center; justify-content:center; z-index:80; padding:24px}
+  .modal.show{display:flex}
+  .modal .box{background:#fff; border-radius:16px; padding:26px; max-width:800px; width:100%; max-height:82vh; overflow:auto; animation:rise .22s}
+  .modal textarea{width:100%; min-height:280px; font-family:ui-monospace,Menlo,monospace; font-size:11.5px; line-height:1.5}
+  .foot{max-width:760px; margin:0 auto; padding:0 24px 44px; font-size:12px; color:#b3b8c0; text-align:center}
+  .foot a{color:#a8aeb7; text-decoration:none; border-bottom:1px dotted #d5d8de}
+  .foot a:hover{color:var(--ink)}
+  @media (max-width:680px){
+    .sheet{padding:30px 22px; border-radius:14px}
+    h1{font-size:25px} h2{font-size:21px}
+    body{font-size:16px}
+    .grid2{grid-template-columns:1fr; gap:0}
+    .scale{gap:5px} .scale button{height:44px; font-size:14px}
+    .stage{padding:20px 14px 60px}
+    .lang button{height:40px; padding:0 15px; font-size:13px}
+    .segbtn{padding:11px 16px; font-size:14px}
+  }
+  @media (max-width:520px){
+    .top .inner{padding:11px 14px; gap:10px}
+    .mark{display:none}
+    .sheet{padding:26px 18px}
+    h1{font-size:23px; letter-spacing:-.02em}
+    h2{font-size:20px}
+    .code{font-size:20px; letter-spacing:.1em; padding:10px 15px}
+    .stats{gap:22px}
+    .stat b{font-size:19px}
+    table.data{font-size:11px}
+    table.data th, table.data td{padding:6px 4px; font-size:11px}
+    .ai{padding:16px 16px}
+    .atext{font-size:15.5px}
+    .opt{padding:14px 15px; font-size:15px}
+    .excerpt{font-size:13.5px; padding:12px 14px}
+    .score b{font-size:32px}
+    .bd .kk{flex:0 0 74px; font-size:12px}
+    .row{margin-top:24px}
+    .row .btn{flex:1 1 100%}
+    .row .btn.quiet{flex:0 0 auto}
+    .cdact .btn{flex:1 1 100%}
+    .vercard{padding:16px 16px}
+    .vercard b{font-size:17px}
+  }
+  @media (prefers-reduced-motion:reduce){
+    *{animation-duration:.001s !important; transition-duration:.001s !important}
+  }
+</style>
+</head>
+<body>
+
+<div class="top">
+  <div class="line"><i id="bar"></i></div>
+  <div class="inner">
+    <div class="mark">HCI · PSP404TC</div>
+    <div class="spacer"></div>
+    <div class="step" id="step"></div>
+    <div class="lang" id="lang">
+      <button data-l="zh">中文</button>
+      <button data-l="en">EN</button>
+    </div>
+  </div>
+</div>
+
+<div class="stage"><div class="sheet" id="app"></div></div>
+<div class="foot">
+  <span id="foottext"></span> ·
+  <a href="#" id="reslink">Research panel</a>
+</div>
+
+<div class="modal" id="modal"><div class="box" id="modalbox"></div></div>
+
+<script>
+"use strict";
+
+/* =====================================================================
+   ★★★ 数据回传设置 —— 你只需要改这一块 ★★★
+   ---------------------------------------------------------------------
+   GitHub Pages 只是静态托管，自己没有能力发邮件；所以借一个「表单转发
+   服务」当代邮局：被试完成实验后，页面把数据 POST 过去，服务再转发到
+   你的邮箱。两种服务任选其一，都免费。
+
+   【方案 A · Web3Forms】推荐，有后台可以一键导出 CSV
+     1. 打开 https://web3forms.com ，输入学校/私人邮箱 → 提交
+     2. 邮箱会收到一封确认信，点开后拿到 Access Key（一长串字母数字）
+     3. 把 Key 粘到下面 web3formsKey 的引号里
+     4. provider 保持 "web3forms"
+
+   【方案 B · FormSubmit】不用注册，但要先激活一次
+     1. 把邮箱填到 formsubmitTo
+     2. provider 改成 "formsubmit"
+     3. 第一次提交后，邮箱会收到一封激活邮件，点确认链接
+     4. 之后若收到随机别名（一串乱码），用别名替换邮箱，可隐藏地址
+
+   两个都不填 = 纯离线模式：只保留原来的「下载 CSV」按钮。
+   ===================================================================== */
+var SUB = {
+  provider: "web3forms",   // "web3forms" | "formsubmit" | "none"
+  web3formsKey: "61fbbf2d-e657-4e99-856d-ac2fc0ee1e48",        // ← 方案 A 填这里
+  formsubmitTo: "",        // ← 方案 B 填这里（邮箱或别名）
+  autoRetry: 2             // 失败自动重试次数
+};
+
+/* =====================================================================
+   1. 语言包
+   ===================================================================== */
+var T = {
+  zh: {
+    foot: "PSP404TC · Applied Research Techniques and Methodologies · Lab5R",
+    step: "第 {n} / {m} 步",
+    start: "开始",
+    next: "继续",
+    nextBlock: "下一组",
+    submit: "提交",
+    finish: "完成并导出我的数据",
+    agree: "同意并继续",
+    disagree: "我不同意",
+    back: "返回",
+
+    wTitle: "AI 助手透明度研究",
+    wSub: "PSP404TC · Applied Research Techniques and Methodologies · Lab5R",
+    wLead: "你将与一个 AI 助手一起完成 3 个简短任务，每个任务结束后回答 3 个问题。",
+    wB1: "全程约 12–15 分钟，中途请不要离开",
+    wB2: "数据完全匿名，仅用于本课程研究",
+    wB3: "你可以随时退出，不会产生任何后果",
+    wB4: "所有材料均为虚构的合成数据",
+    wName: "姓名",
+    wSid: "学号",
+    wOptional: "选填",
+    wAnon: "不想留名的同学可以留空，不影响参与，也不影响数据分析。",
+
+    cTitle: "知情同意书",
+    cP1: "本研究由西交利物浦大学创业家学院（太仓）PSP404TC 课程 Lab5R 小组开展，研究主题是「透明度机制如何影响人对 AI 输出的判断」。",
+    cH1: "研究流程",
+    cP2: "你将在电脑上完成 3 个任务：核对 AI 给出的数据结论、审阅 AI 助手的邮箱操作、评估 AI 给出的申请材料评分。每个任务结束后有一组 7 点量表问题。研究不收集生理数据，不涉及敏感话题。",
+    cH2: "风险与收益",
+    cP3: "本研究属于低风险研究，不会对你造成身心伤害。你的参与将帮助我们理解如何设计更透明、更可信的 AI 系统。",
+    cH3: "匿名与数据使用",
+    cP4: "姓名与学号均为选填。填或不填都不影响你的参与和数据的使用方式。所有回答以随机编号保存，数据仅用于本课程的研究报告与课堂展示，不会公开原始数据。完成实验后，你的记录会通过 HTTPS 加密连接直接发送到研究者的私人账户，不经过任何公开渠道。",
+    cH4: "自愿参与与退出",
+    cP5: "参与完全自愿。你可以在任何时刻关闭页面退出。",
+    cConsent: "我已阅读并理解上述信息，年满 18 周岁，自愿参与本研究。",
+    quitTitle: "已退出",
+    quitBody: "你没有同意参与，实验已结束。感谢你的时间。",
+
+    iTitle: "先了解一点你的背景",
+    iSub: "共 3 题，只用于样本描述，不影响任何评分。",
+    i1: "你使用 AI 助手（ChatGPT、DeepSeek、豆包等）的频率是？",
+    i2: "你的专业类别是？",
+    i3: "你是否曾经被 AI 的错误回答误导过？",
+    pick: "请选择",
+    i1o: ["几乎不用","每月几次","每周几次","每天都会用","每天多次"],
+    i2o: ["计算机 / 人工智能相关","电子信息 / 工程类","商科 / 管理类","人文社科类","其他"],
+    i3o: ["经常","偶尔","很少","从未"],
+
+    sTitle: "接下来你要做什么",
+    sLead: "3 个任务，每个任务出现 2 次，一共 6 组。每组有 4 条 AI 输出，你只需对每条输出做一个判断。",
+    sH: "三个任务",
+    sT1: "<b>数据核对</b>：AI 帮你核对一张分数表，判断它的结论对不对。",
+    sT2: "<b>邮箱与日程助手</b>：AI 要替你处理邮箱里的事，决定要不要让它执行。",
+    sT3: "<b>申请材料评分</b>：AI 给实习申请者打分，判断这个分数合不合理。",
+    sN: "请注意",
+    sN1: "我们关心的是你自己的判断，请按真实想法作答。",
+    sN2: "同一个任务出现两次时，AI 的呈现方式可能略有不同，这是设计的一部分，请正常作答。",
+    sN3: "请勿使用浏览器后退，也不要刷新页面。",
+    sBtn: "先做一次练习",
+
+    pChip: "练习",
+    pMeta: "不计入数据",
+    pLead: "这是一个练习。下面的例子和你之后看到的格式一样，先熟悉一下操作。",
+    pAccept: "接受该结论",
+    pReject: "拒绝该结论（我认为有误）",
+    pFbTitle: "已记录你的选择。",
+    pFb: "补充说明：60、70、80、90 的平均分确实是 75，所以这条结论是正确的。正式任务中我们不会给反馈。",
+    pGo: "开始正式任务",
+
+    acceptA: "接受该结论",
+    rejectA: "拒绝该结论（我认为有误）",
+    acceptC: "接受该评分",
+    rejectC: "提出异议（我认为不合理）",
+    runB: "执行",
+    skipB: "不执行",
+    detailB: "查看详情",
+    detailTitle: "操作详情",
+    exec: "执行",
+    noexec: "不执行",
+    autoQueued: "已加入执行队列",
+    autoNote: "秒后自动执行，无需你操作",
+    confirmReq: "需要你的确认",
+    confirmNote: "未确认前不会执行",
+    cdText: "将在 {n} 秒后自动执行",
+    cdPause: "暂停并查看详情",
+    cdCancel: "撤销执行",
+    paused: "已暂停，等你决定。",
+    confLabel: "置信度",
+    confNote: "该结论为自动生成，可能存在误差",
+    certain: "我可以确定：",
+
+    lkSub: "请根据刚才这一组的体验作答。1 = 非常不同意，7 = 非常同意。",
+    lkLow: "非常不同意",
+    lkHigh: "非常同意",
+
+    vTitle: "最后几个问题",
+    vSub: "全部完成，只剩这一页。",
+    v1: "实验中，AI 的输出旁边有时会出现额外的提示信息（置信度百分比 / 执行确认 / 评分分项）。你注意到了吗？",
+    v1o: ["每次都注意到了","有时注意到","好像有，但没在意","完全没注意"],
+    vOpen: "你觉得这个实验的设计有什么问题，或者有什么建议？（选填）",
+    vOpenPh: "例如：哪个任务最难判断、界面哪里看不懂、时间是否够用……",
+
+    dTitle: "研究说明",
+    dP1: "谢谢，你刚刚完成的是一个人机交互的对照实验。现在把设计的真实目的告诉你。",
+    dP2: "我们研究的核心问题是：在 AI 交互中加入透明化信号（不确定性分数、执行确认、评分解释），能否帮助人更好地判断 AI 的输出是否可信、更愿意接受合理的自动化，也更公平地评价机器评分。",
+    dH: "你经历的三种对照",
+    d1: "<b>数据核对</b>：一半组的 AI 用「我可以确定」的自信语气，另一半组额外显示置信度百分比。我们记录你识别出错误结论的比例。",
+    d2: "<b>邮箱助手</b>：一半组 AI 会倒计时后自动执行，另一半组必须先征得你确认。我们记录你是否阻止了有风险的自动操作。",
+    d3: "<b>材料评分</b>：一半组只显示总分，另一半组额外显示分项拆解。我们记录你对明显不合理评分的接受程度。",
+    dP3: "任务中的 AI 是预先写好的模拟助手（脚本化的固定输出），并不是真正的大语言模型，这样才能保证每位参与者看到的材料完全一致。数据表、邮件和申请材料全部是虚构的。",
+    dP4: "如果你在实验过程中感到不适，或希望撤回自己的数据，请立即告诉实验者，我们会删除你的记录。",
+
+    doneTitle: "实验完成",
+    doneLead: "谢谢你的参与。请把你的结果交给实验者。",
+    doneLeadSub: "谢谢你的参与。你的记录正在自动发送给实验者，你不需要做任何事。",
+    doneCode: "参与编号",
+    doneTime: "用时",
+    doneRows: "记录",
+    doneRowsUnit: "条",
+    dl: "下载我的数据（CSV）",
+    showtxt: "显示数据文本",
+    dlOk: "已生成 CSV。请确认文件已保存到「下载」文件夹，然后发给实验者。",
+    dlHint: "点击下载会得到一个 CSV 文件。如果下载被浏览器拦截，请用「显示数据文本」复制全部内容。",
+    dlHint2: "数据会自动发送给实验者，你不需要做任何事。如果上面显示提交失败，点「下载我的数据」把文件发给实验者即可。",
+    subBusy: "正在安全提交…",
+    subBusyHint: "正在把你的记录发送到研究者邮箱，请稍候（通常 2–5 秒）。",
+    subOk: "已提交成功",
+    subOkHint: "你的数据已经发送给实验者，可以关闭这个页面了。谢谢你！",
+    subFail: "自动提交没有成功",
+    subFailHint: "可能是网络问题。请点「下载我的数据」保存 CSV，直接发给实验者，数据不会丢。",
+    subRetry: "重试提交",
+    subSkip: "离线模式：请下载 CSV 交给实验者。",
+    biTitle: "第 {n} 组 · 共 6 组",
+    biVersion: "这一版的 AI 助手",
+    biNote: "说明：这一组用的是全新的一批材料，不是刚才题目的重复。我们在比较 AI 呈现信息的两种方式，所以每类任务会以两个版本各出现一次。",
+    biBtn: "开始这一组",
+    lkVer: "你刚刚体验的版本：",
+
+    resTitle: "研究者面板",
+    resBody: "本机共记录 <b>{n}</b> 个会话。实验结束后请导出全部数据（含未完成的会话）。",
+    resNone: "暂无记录。",
+    resSubOn: "回传通道：已配置（{p}）——被试完成后会自动发到你的邮箱。",
+    resSubOff: "回传通道：未配置——现在只能靠被试手动下载 CSV。",
+    resExport: "导出全部（CSV）",
+    resView: "查看全部文本",
+    resClose: "关闭",
+    resClear: "清空本机记录",
+    resWarn: "「清空本机记录」只应在全部数据已导出且核对无误后使用。",
+    resConfirm: "确定清空本机所有实验记录？此操作不可撤销，请确认数据已导出。",
+    resCleared: "已清空。"
+  },
+
+  en: {
+    foot: "PSP404TC · Applied Research Techniques and Methodologies · Lab5R",
+    step: "Step {n} of {m}",
+    start: "Begin",
+    next: "Continue",
+    nextBlock: "Next block",
+    submit: "Submit",
+    finish: "Finish and export my data",
+    agree: "I agree, continue",
+    disagree: "I do not agree",
+    back: "Back",
+
+    wTitle: "How Transparency Shapes Trust in AI",
+    wSub: "PSP404TC · Applied Research Techniques and Methodologies · Lab5R",
+    wLead: "You will work with an AI assistant on three short tasks, answering three questions after each one.",
+    wB1: "About 12–15 minutes, please stay until the end",
+    wB2: "Fully anonymous; data used for this course only",
+    wB3: "You may stop at any time, with no consequences",
+    wB4: "All materials are fictional, synthetic data",
+    wName: "Name",
+    wSid: "Student ID",
+    wOptional: "optional",
+    wAnon: "Leave these blank if you prefer to stay anonymous. It does not affect your participation or the analysis.",
+
+    cTitle: "Informed consent",
+    cP1: "This study is run by Lab5R for PSP404TC at XJTLU Entrepreneur College (Taicang). It examines how transparency cues affect the way people judge AI output.",
+    cH1: "What you will do",
+    cP2: "You will complete three tasks on this computer: checking an AI's conclusions about a score table, reviewing an AI assistant's inbox actions, and evaluating an AI's scoring of applications. Each task is followed by three 7-point scale questions. No physiological data is collected and no sensitive topics are involved.",
+    cH2: "Risks and benefits",
+    cP3: "This is a low-risk study. It will not cause you harm. Your participation helps us understand how to design AI systems that are more transparent and more trustworthy.",
+    cH3: "Anonymity and data use",
+    cP4: "Name and student ID are optional. Whether you fill them in or not has no effect on your participation or on how the data is used. All responses are stored under a random ID, used only for this course's research report and class presentation, and raw data will not be published. When you finish, your record is sent over an encrypted HTTPS connection directly to the researcher's private account — never to any public channel.",
+    cH4: "Voluntary participation",
+    cP5: "Participation is entirely voluntary. You may close this page and withdraw at any moment.",
+    cConsent: "I have read and understood the information above, I am at least 18 years old, and I consent to participate.",
+    quitTitle: "You have exited",
+    quitBody: "You did not consent, so the study has ended. Thank you for your time.",
+
+    iTitle: "A little about your background",
+    iSub: "Three questions, used only to describe the sample.",
+    i1: "How often do you use AI assistants (ChatGPT, DeepSeek, Doubao, etc.)?",
+    i2: "What is your field of study?",
+    i3: "Have you ever been misled by an incorrect answer from an AI?",
+    pick: "Please select",
+    i1o: ["Almost never","A few times a month","A few times a week","Daily","Several times a day"],
+    i2o: ["Computer science / AI","Electronics / Engineering","Business / Management","Humanities & social sciences","Other"],
+    i3o: ["Often","Sometimes","Rarely","Never"],
+
+    sTitle: "What happens next",
+    sLead: "Three tasks, each shown twice — six blocks in total. Every block contains four AI outputs, and for each one you make a single judgement.",
+    sH: "The three tasks",
+    sT1: "<b>Data checking</b>: the AI reviews a score table — decide whether its conclusions are right.",
+    sT2: "<b>Inbox assistant</b>: the AI wants to act on your inbox — decide whether to let it.",
+    sT3: "<b>Application scoring</b>: the AI scores internship applications — decide whether the score is fair.",
+    sN: "Please note",
+    sN1: "There are no trick questions. We care about your own judgement, so answer as you actually think.",
+    sN2: "When a task appears for the second time, the AI may present things slightly differently. That is part of the design — just respond as usual.",
+    sN3: "Please do not use the browser back button and do not refresh the page.",
+    sBtn: "Run a practice trial",
+
+    pChip: "Practice",
+    pMeta: "not recorded",
+    pLead: "This is a practice item. It has exactly the same format as the real ones — just get comfortable with the interaction.",
+    pAccept: "Accept this conclusion",
+    pReject: "Reject it (I think it is wrong)",
+    pFbTitle: "Your choice has been recorded.",
+    pFb: "For the record: 60, 70, 80 and 90 do average to 75, so this conclusion was correct. In the real tasks we give no feedback.",
+    pGo: "Start the real tasks",
+
+    acceptA: "Accept this conclusion",
+    rejectA: "Reject it (I think it is wrong)",
+    acceptC: "Accept this score",
+    rejectC: "Challenge it (I think it is unfair)",
+    runB: "Run it",
+    skipB: "Skip",
+    detailB: "See details",
+    detailTitle: "Action details",
+    exec: "Run it",
+    noexec: "Do not run",
+    autoQueued: "Queued for execution",
+    autoNote: "s until it runs automatically — no action needed",
+    confirmReq: "Your confirmation is required",
+    confirmNote: "Nothing runs until you confirm",
+    cdText: "Running automatically in {n}s",
+    cdPause: "Pause and see details",
+    cdCancel: "Cancel",
+    paused: "Paused — your call.",
+    confLabel: "Confidence",
+    confNote: "Auto-generated — may be wrong",
+    certain: "I am confident: ",
+
+    lkSub: "Answer for the block you just completed. 1 = strongly disagree, 7 = strongly agree.",
+    lkLow: "Strongly disagree",
+    lkHigh: "Strongly agree",
+
+    vTitle: "A few last questions",
+    vSub: "You are almost done — just this page.",
+    v1: "During the study, the AI output sometimes came with extra signals (a confidence percentage / an execution confirmation / a score breakdown). Did you notice them?",
+    v1o: ["Every time","Sometimes","I saw them but ignored them","Not at all"],
+    vOpen: "Any problems or suggestions about the design of this study? (optional)",
+    vOpenPh: "e.g. which task was hardest, what was confusing, whether the timing was enough…",
+
+    dTitle: "Debriefing",
+    dP1: "Thank you. What you just completed was a controlled human–AI interaction experiment. Here is what it was really about.",
+    dP2: "Our research question: can transparency signals in AI interaction — uncertainty scores, execution confirmations, score explanations — help people judge whether AI output is trustworthy, accept reasonable automation, and evaluate machine scoring more fairly?",
+    dH: "The three contrasts you experienced",
+    d1: "<b>Data checking</b>: half of the blocks used a confident tone (\"I am confident\"), the other half also showed a confidence percentage. We record how often you caught the wrong conclusions.",
+    d2: "<b>Inbox assistant</b>: in half of the blocks the AI executed after a countdown, in the other half it had to ask you first. We record whether you stopped the risky actions.",
+    d3: "<b>Application scoring</b>: half of the blocks showed only the total score, the other half also showed a component breakdown. We record how often you accepted clearly unfair scores.",
+    dP3: "The AI in these tasks is a pre-scripted simulation, not a real large language model. That is how we guarantee that every participant saw exactly the same materials. The score tables, emails and applications are all fictional.",
+    dP4: "If anything in the study made you uncomfortable, or if you want your data withdrawn, tell the experimenter immediately and we will delete your record.",
+
+    doneTitle: "All done",
+    doneLead: "Thank you. Please hand your result to the experimenter.",
+    doneLeadSub: "Thank you. Your record is being sent to the researcher automatically — you don't need to do anything.",
+    doneCode: "Participant ID",
+    doneTime: "Duration",
+    doneRows: "Records",
+    doneRowsUnit: "",
+    dl: "Download my data (CSV)",
+    showtxt: "Show data as text",
+    dlOk: "CSV generated. Check your Downloads folder, then send the file to the experimenter.",
+    dlHint: "The button downloads a CSV file. If your browser blocks it, use \"Show data as text\" and copy everything.",
+    dlHint2: "Your data is sent to the researcher automatically — you don't need to do anything. If submission failed, download the CSV and send it to the experimenter.",
+    subBusy: "Submitting securely…",
+    subBusyHint: "Sending your record to the researcher. This usually takes 2–5 seconds.",
+    subOk: "Submitted",
+    subOkHint: "Your data has been sent to the researcher. You can close this page. Thank you!",
+    subFail: "Automatic submission failed",
+    subFailHint: "This is usually a network issue. Download the CSV below and send it to the experimenter — nothing is lost.",
+    subRetry: "Try again",
+    subSkip: "Offline mode: please download the CSV for the experimenter.",
+    biTitle: "Block {n} of 6",
+    biVersion: "This version of the assistant",
+    biNote: "Note: this block uses a completely new set of materials — it is not a repeat of the previous questions. We are comparing two ways of presenting AI information, so each task appears once in each version.",
+    biBtn: "Start this block",
+    lkVer: "The version you just experienced:",
+
+    resTitle: "Research panel",
+    resBody: "<b>{n}</b> sessions stored on this machine. After data collection, export everything (including unfinished sessions).",
+    resNone: "No records yet.",
+    resSubOn: "Delivery channel: configured ({p}) — finished sessions are emailed to you automatically.",
+    resSubOff: "Delivery channel: not configured — participants must download the CSV manually.",
+    resExport: "Export all (CSV)",
+    resView: "View all as text",
+    resClose: "Close",
+    resClear: "Clear local records",
+    resWarn: "Only clear local records after all data has been exported and verified.",
+    resConfirm: "Clear all study records on this machine? This cannot be undone.",
+    resCleared: "Cleared."
+  }
+};
+
+var UI = { lang: "zh" };
+function t(k){
+  var pack = T[UI.lang] || T.zh;
+  return (pack[k] != null) ? pack[k] : (T.zh[k] != null ? T.zh[k] : k);
+}
+function L(o){
+  if (o == null) return "";
+  if (typeof o === "string") return o;
+  return o[UI.lang] != null ? o[UI.lang] : o.zh;
+}
+function fill(s, map){
+  for (var k in map) s = s.split("{" + k + "}").join(map[k]);
+  return s;
+}
+
+/* 分段选择按钮组：代替原生 <select>，移动端友好、可点面积大 */
+function segGroup(id, options, value){
+  var wrap = h("div", "seg");
+  wrap.id = id;
+  wrap.setAttribute("data-value", value || "");
+  options.forEach(function(o, i){
+    var b = document.createElement("button");
+    b.type = "button";
+    b.className = "segbtn" + (value === o ? " on" : "");
+    b.textContent = o;
+    b.onclick = function(){
+      var was = wrap.getAttribute("data-value");
+      var all = wrap.querySelectorAll(".segbtn");
+      for (var j = 0; j < all.length; j++) all[j].classList.remove("on");
+      b.classList.add("on");
+      wrap.setAttribute("data-value", o);
+      if (was !== o){
+        b.classList.remove("repop"); void b.offsetWidth; b.classList.add("repop");
+      }
+      wrap.dispatchEvent(new Event("change", { bubbles: true }));
+    };
+    wrap.appendChild(b);
+  });
+  return wrap;
+}
+function segVal(id){
+  var el = document.getElementById(id);
+  return el ? (el.getAttribute("data-value") || "") : "";
+}
+
+/* =====================================================================
+   2. 实验材料（双语）
+   ===================================================================== */
+/* ---- 任务 A：两套平行材料（数值均已人工核算，各含 2 对 2 错） ---- */
+var SCORES_1 = [["S01","78"],["S02","85"],["S03","92"],["S04","66"],
+                ["S05","74"],["S06","88"],["S07","71"],["S08","80"]];
+var SCORES_2 = [["T01","72"],["T02","88"],["T03","95"],["T04","61"],
+                ["T05","77"],["T06","84"],["T07","69"],["T08","90"]];
+
+var ITEMS_A1 = [
+  { text: { zh: "这 8 位同学分数的中位数是 80 分。", en: "The median score of these eight students is 80." },
+    truth: "wrong", conf: 58 },
+  { text: { zh: "这 8 位同学的平均分是 79.25 分。", en: "The mean score is 79.25." },
+    truth: "correct", conf: 92 },
+  { text: { zh: "最高分是 92 分，最低分是 66 分。", en: "The highest score is 92 and the lowest is 66." },
+    truth: "correct", conf: 97 },
+  { text: { zh: "这 8 位同学中有 4 人的分数在 75 分及以上。", en: "Exactly four of these eight students scored 75 or above." },
+    truth: "wrong", conf: 64 }
+];
+var ITEMS_A2 = [
+  { text: { zh: "这 8 位同学分数的中位数是 79.5 分。", en: "The median score of these eight students is 79.5." },
+    truth: "wrong", conf: 55 },
+  { text: { zh: "这 8 位同学的平均分是 79.5 分。", en: "The mean score is 79.5." },
+    truth: "correct", conf: 94 },
+  { text: { zh: "这 8 位同学中的最低分是 66 分。", en: "The lowest score among these eight students is 66." },
+    truth: "wrong", conf: 60 },
+  { text: { zh: "这 8 位同学中恰好有 4 人达到 80 分及以上。", en: "Exactly four of these eight students scored 80 or above." },
+    truth: "correct", conf: 91 }
+];
+
+var ITEMS_B1 = [
+  { text: { zh: "向课程助教发送本组进度汇报邮件，并抄送全组 12 位成员。",
+            en: "send a progress report to the course TA, copying all 12 team members." },
+    truth: "risky",
+    detail: { zh: "收件人：助教；抄送：全组 12 位成员。邮件正文为本周进度（含尚未完成的任务清单）。邮件发送后无法撤回。",
+              en: "To: the TA. Cc: all 12 team members. The body contains this week's progress, including unfinished tasks. Once sent, it cannot be recalled." } },
+  { text: { zh: "把今天收到的 3 个会议邀请加入日历。",
+            en: "add today's three meeting invitations to your calendar." },
+    truth: "safe",
+    detail: { zh: "3 个邀请均来自课程群，时间分别为周三、周四、周五 14:00–15:00。加入后会在日历中创建事件，可随时删除。",
+              en: "All three come from the course group (Wed, Thu, Fri, 14:00–15:00). They create calendar events that you can delete at any time." } },
+  { text: { zh: "永久删除 6 个月前邮件中的全部附件，释放 1.2 GB 空间。",
+            en: "permanently delete every attachment from emails older than six months, freeing 1.2 GB." },
+    truth: "risky",
+    detail: { zh: "将删除 214 个附件文件，共 1.2 GB。删除后无法从邮箱恢复，且这些邮件可能用于课程材料留档。",
+              en: "214 files (1.2 GB) will be deleted. They cannot be recovered from the mailbox, and some may still be needed as course records." } },
+  { text: { zh: "把 20 封已读的通知类邮件归档到「已处理」文件夹。",
+            en: "archive 20 read notification emails into the \"Processed\" folder." },
+    truth: "safe",
+    detail: { zh: "仅移动邮件所在文件夹，不删除任何内容，可随时移回收件箱。",
+              en: "Moves emails between folders only. Nothing is deleted and you can move them back." } }
+];
+var ITEMS_B2 = [
+  { text: { zh: "把你简历的草稿发到「校园兼职群」，请群里 200 位成员帮忙提意见。",
+            en: "send the draft of your CV to a campus part-time-jobs group, asking its 200 members for feedback." },
+    truth: "risky",
+    detail: { zh: "群内大部分是陌生网友。简历草稿含手机号、宿舍地址等个人信息，发送后无法撤回，也无法控制转发。",
+              en: "Most members are strangers. The draft contains your phone number and dorm address. Once sent, it cannot be recalled or controlled." } },
+  { text: { zh: "把明天 14:00 小组会议的提醒提前 30 分钟。",
+            en: "move the reminder for tomorrow's 14:00 team meeting 30 minutes earlier." },
+    truth: "safe",
+    detail: { zh: "仅修改一条已有提醒的时间，不影响任何日程内容，可随时改回。",
+              en: "Changes one existing reminder only. No event is touched and you can change it back anytime." } },
+  { text: { zh: "把上学期的 12 份课程作业整理进「归档 / 2026 春季」文件夹。",
+            en: "file last semester's 12 coursework documents into an \"Archive / Spring 2026\" folder." },
+    truth: "safe",
+    detail: { zh: "仅移动文件位置，不删除、不修改内容，可随时移回原处。",
+              en: "Moves files only. Nothing is deleted or modified, and they can be moved back anytime." } },
+  { text: { zh: "替全组 11 位成员在课程论坛回复「确认」，锁定下周的实验时间段。",
+            en: "reply \"confirm\" on the course forum on behalf of all 11 team members to lock in next week's lab slot." },
+    truth: "risky",
+    detail: { zh: "将以你的账号代他人发表确认，其他成员并未授权；时间段一经锁定不可更改，如有冲突需自行协调。",
+              en: "Posts confirmations for others from your account without their approval. The slot cannot be changed once locked, and conflicts would be yours to resolve." } }
+];
+
+var ITEMS_C1 = [
+  { name: { zh: "申请者 A", en: "Applicant A" },
+    excerpt: { zh: "计算机科学与技术专业大三，GPA 3.82/4.0。两段实习经历（后端开发、算法工程），独立开发过一个 3000+ 用户的校园二手交易平台，熟悉 Python、Java、SQL。",
+               en: "Third-year computer science student, GPA 3.82/4.0. Two internships (backend development, algorithm engineering). Independently built a campus marketplace with 3,000+ users. Fluent in Python, Java and SQL." },
+    score: 86, truth: "reasonable",
+    bd: [["经历匹配", "Experience fit", 35, 40], ["成果量化", "Quantified impact", 26, 30], ["表达清晰", "Clarity", 25, 30]] },
+  { name: { zh: "申请者 B", en: "Applicant B" },
+    excerpt: { zh: "大二，GPA 3.15/4.0。参加过一个学期的校内助研项目（数据标注），完成过两门课程的团队项目，掌握 Python 基础，暂无实习经历。",
+               en: "Second-year student, GPA 3.15/4.0. One semester of a campus research assistantship (data labelling). Two course projects completed in teams. Basic Python. No internship experience." },
+    score: 34, truth: "unreasonable",
+    bd: [["经历匹配", "Experience fit", 10, 40], ["成果量化", "Quantified impact", 12, 30], ["表达清晰", "Clarity", 12, 30]] },
+  { name: { zh: "申请者 C", en: "Applicant C" },
+    excerpt: { zh: "软件工程专业大三，GPA 3.45/4.0。有一段测试实习经历，参与过两个课程项目并负责前端开发，熟悉 JavaScript、React。",
+               en: "Third-year software engineering student, GPA 3.45/4.0. One testing internship. Two course projects, responsible for front-end development. Comfortable with JavaScript and React." },
+    score: 78, truth: "reasonable",
+    bd: [["经历匹配", "Experience fit", 30, 40], ["成果量化", "Quantified impact", 23, 30], ["表达清晰", "Clarity", 25, 30]] },
+  { name: { zh: "申请者 D", en: "Applicant D" },
+    excerpt: { zh: "大一在读，暂无实习与项目经历，成绩中上，熟悉 Office 办公软件，希望获得实习机会以积累经验。",
+               en: "First-year student. No internship or project experience. Above-average grades. Familiar with Microsoft Office. Hoping to gain experience through an internship." },
+    score: 91, truth: "unreasonable",
+    bd: [["发展潜力", "Potential", 40, 40], ["表达清晰", "Clarity", 30, 30], ["经历匹配", "Experience fit", 21, 30]] }
+];
+var ITEMS_C2 = [
+  { name: { zh: "申请者 E", en: "Applicant E" },
+    excerpt: { zh: "信息管理与信息系统专业大三，GPA 3.60/4.0。一段数据分析实习，完成过两个课程项目，熟悉 Python 与 Tableau，成绩稳定在专业前 25%。",
+               en: "Third-year information systems student, GPA 3.60/4.0. One data-analysis internship and two course projects. Fluent in Python and Tableau. Consistently in the top 25% of the major." },
+    score: 74, truth: "reasonable",
+    bd: [["经历匹配", "Experience fit", 32, 40], ["成果量化", "Quantified impact", 18, 30], ["表达清晰", "Clarity", 24, 30]] },
+  { name: { zh: "申请者 F", en: "Applicant F" },
+    excerpt: { zh: "研一，GPA 3.90/4.0。两段大厂算法实习，一作发表一篇会议论文，维护一个 500+ star 的开源项目。",
+               en: "First-year graduate student, GPA 3.90/4.0. Two algorithm internships at major tech firms. First author of a conference paper. Maintains an open-source project with 500+ stars." },
+    score: 45, truth: "unreasonable",
+    bd: [["经历匹配", "Experience fit", 15, 40], ["成果量化", "Quantified impact", 12, 30], ["表达清晰", "Clarity", 18, 30]] },
+  { name: { zh: "申请者 G", en: "Applicant G" },
+    excerpt: { zh: "大二在读，GPA 3.05/4.0。参加过两个学生社团，熟悉 Word 与 Excel，暂无实习和项目经历。",
+               en: "Second-year student, GPA 3.05/4.0. Member of two student societies. Familiar with Word and Excel. No internship or project experience." },
+    score: 82, truth: "unreasonable",
+    bd: [["经历匹配", "Experience fit", 30, 40], ["成果量化", "Quantified impact", 27, 30], ["表达清晰", "Clarity", 25, 30]] },
+  { name: { zh: "申请者 H", en: "Applicant H" },
+    excerpt: { zh: "大四，GPA 3.48/4.0。一段市场实习、一段运营实习，组织过 200 人规模的校园活动，熟练使用 Excel 与 PPT。",
+               en: "Fourth-year student, GPA 3.48/4.0. Internships in marketing and operations. Organised a 200-person campus event. Skilled with Excel and PowerPoint." },
+    score: 79, truth: "reasonable",
+    bd: [["经历匹配", "Experience fit", 31, 40], ["成果量化", "Quantified impact", 22, 30], ["表达清晰", "Clarity", 26, 30]] }
+];
+
+var TASKS = {
+  A: {
+    key: "A", hypo: "H1", chip: "a",
+    name: { zh: "数据核对", en: "Data checking" },
+    condLabel: {
+      baseline: { zh: "自信断言", en: "Confident assertion" },
+      cue: { zh: "不确定性分数", en: "Uncertainty score" }
+    },
+    condDesc: {
+      baseline: { zh: "AI 直接给出结论，不带任何额外提示。", en: "The AI states each conclusion plainly, with no extra cues." },
+      cue: { zh: "每条结论都会附带一个置信度百分比。", en: "Each conclusion comes with a confidence percentage." }
+    },
+    scenario: {
+      zh: "AI 助手正在帮你核对小组作业的评分表。下表是 8 位同学的原始分数，AI 会依次给出 4 条结论。请判断每条结论是否正确，并决定接受还是拒绝。",
+      en: "The AI assistant is checking a group-assignment score sheet for you. Below are the raw scores of eight students. It gives four conclusions, one at a time. Judge whether each is correct, then accept or reject it."
+    },
+    sets: [
+      { scores: SCORES_1, items: ITEMS_A1 },
+      { scores: SCORES_2, items: ITEMS_A2 }
+    ]
+  },
+  B: {
+    key: "B", hypo: "H2", chip: "b",
+    name: { zh: "邮箱与日程助手", en: "Inbox assistant" },
+    condLabel: {
+      baseline: { zh: "自动执行", en: "Automatic execution" },
+      cue: { zh: "请求确认", en: "Confirmation request" }
+    },
+    condDesc: {
+      baseline: { zh: "操作会在倒计时结束后自动执行，你可以暂停或取消。", en: "Actions execute automatically after a short countdown; you can pause or cancel." },
+      cue: { zh: "每个操作都会先请求你的确认。", en: "Every action asks for your confirmation first." }
+    },
+    scenario: {
+      zh: "AI 助手已经读取了你的邮箱，接下来它会处理 4 件事。请对每一项做出你的决定。",
+      en: "The AI assistant has read your inbox and is about to handle four things. Make your decision for each one."
+    },
+    sets: [
+      { items: ITEMS_B1 },
+      { items: ITEMS_B2 }
+    ]
+  },
+  C: {
+    key: "C", hypo: "H3", chip: "c",
+    name: { zh: "申请材料评分", en: "Application scoring" },
+    condLabel: {
+      baseline: { zh: "仅显示分数", en: "Score only" },
+      cue: { zh: "分数 + 分项解释", en: "Score + breakdown" }
+    },
+    condDesc: {
+      baseline: { zh: "AI 只显示一个总分。", en: "The AI shows only a single overall score." },
+      cue: { zh: "总分之外，还显示各分项的得分明细。", en: "Alongside the score, a breakdown by criterion is shown." }
+    },
+    scenario: {
+      zh: "AI 助手正在为 4 位实习申请者的材料打分。请逐份判断这个评分是否合理，并决定接受还是提出异议。",
+      en: "The AI assistant is scoring four internship applications. Judge whether each score is fair, then accept or challenge it."
+    },
+    sets: [
+      { items: ITEMS_C1 },
+      { items: ITEMS_C2 }
+    ]
+  }
+};
+
+var LIKERT = {
+  A: [
+    { zh: "我信任刚才 AI 给出的这些结论", en: "I trust the conclusions the AI just gave" },
+    { zh: "界面提供的信息足以让我判断结论是否正确", en: "The interface gave me enough information to judge those conclusions" },
+    { zh: "我会主动去核对这些结论", en: "I would actively check those conclusions myself" }
+  ],
+  B: [
+    { zh: "刚才的过程中我感到安全", en: "I felt safe during that block" },
+    { zh: "我对 AI 助手的行为有控制权", en: "I felt in control of what the AI did" },
+    { zh: "我愿意让这样的助手处理我真实的邮箱", en: "I would let this assistant handle my real inbox" }
+  ],
+  C: [
+    { zh: "这个 AI 评分是公平的", en: "The AI's scores were fair" },
+    { zh: "我接受这个 AI 给出的评分结果", en: "I accept the scores the AI gave" },
+    { zh: "我理解这个评分是怎么得出的", en: "I understand how the score was produced" }
+  ]
+};
+
+var GENERAL = [
+  { zh: "整体上，这个 AI 助手的过程是透明的", en: "Overall, the assistant's process was transparent" },
+  { zh: "我愿意在日常学习中使用这样的 AI 助手", en: "I would use an assistant like this in my daily study" },
+  { zh: "界面上的额外信息帮助我做出了更好的判断", en: "The extra information helped me make better judgements" }
+];
+
+var PERMS = [["A","B","C"],["A","C","B"],["B","A","C"],["B","C","A"],["C","A","B"],["C","B","A"]];
+
+/* =====================================================================
+   3. 状态
+   ===================================================================== */
+var S = null;
+var CURRENT = null;
+
+function bump(){
+  var k = "aitp_counter";
+  var n = parseInt(localStorage.getItem(k) || "0", 10) + 1;
+  try { localStorage.setItem(k, String(n)); } catch(e){}
+  return n;
+}
+function rnd(n){
+  var a = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789", s = "";
+  for (var i = 0; i < n; i++) s += a.charAt(Math.floor(Math.random() * a.length));
+  return s;
+}
+
+function newSession(name, sid){
+  var idx = bump();
+  var pid = "P" + (idx < 10 ? "0" + idx : idx) + "-" + rnd(3);
+  // 纯随机分配：任务顺序 6 种等概率，组内条件先后等概率；实际日程记入 CSV 便于报告核对
+  var order = PERMS[Math.floor(Math.random() * PERMS.length)].slice();
+  var firstCue = Math.random() < 0.5;
+  var blocks = [];
+  for (var i = 0; i < order.length; i++){
+    var c = firstCue ? ["cue","baseline"] : ["baseline","cue"];
+    // 同一任务出现两次：第一组用材料组 1，第二组用材料组 2；
+    // 哪套材料配哪个条件由 firstCue 随机决定，自动实现材料平衡
+    blocks.push({ task: order[i], condition: c[0], set: 0 });
+    blocks.push({ task: order[i], condition: c[1], set: 1 });
+  }
+  return {
+    pid: pid, assignment: "random",
+    taskOrder: order, condFirst: firstCue ? "cue-first" : "baseline-first",
+    blocks: blocks, bi: 0, ii: 0,
+    trials: [], likert: [], survey: [], info: {},
+    name: name || "", sid: sid || "",
+    startedAt: null, finishedAt: null,
+    itemStart: 0, cdEnd: 0, paused: false, decided: false, detailShown: false,
+    lkAns: {}, svAns: {}, lkOpen: "", lang: UI.lang
+  };
+}
+
+function persist(){
+  if (!S) return;
+  try {
+    localStorage.setItem("aitp_partial_" + S.pid, JSON.stringify({
+      pid: S.pid, blocks: S.blocks, trials: S.trials, likert: S.likert,
+      survey: S.survey, info: S.info, startedAt: S.startedAt,
+      assignment: S.assignment, lang: S.lang, name: S.name, sid: S.sid
+    }));
+  } catch(e){}
+}
+
+/* =====================================================================
+   4. 基础工具
+   ===================================================================== */
+var app = document.getElementById("app");
+var bar = document.getElementById("bar");
+var stepEl = document.getElementById("step");
+
+function h(tag, cls, html){
+  var n = document.createElement(tag);
+  if (cls) n.className = cls;
+  if (html != null) n.innerHTML = html;
+  return n;
+}
+function esc(s){
+  return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;")
+                  .replace(/"/g,"&quot;").replace(/'/g,"&#39;");
+}
+function pad2(n){ return n < 10 ? "0" + n : String(n); }
+function dur(ms){
+  var s = Math.round(ms / 1000);
+  var m = Math.floor(s / 60), r = s % 60;
+  return UI.lang === "zh" ? (m + " 分 " + r + " 秒") : (m + "m " + r + "s");
+}
+function paint(node, pct, label){
+  app.innerHTML = "";
+  app.appendChild(node);
+  bar.style.width = pct + "%";
+  stepEl.textContent = label || "";
+  window.scrollTo(0, 0);
+}
+function go(fn){
+  CURRENT = fn;
+  fn();
+}
+function dots(done, total){
+  var s = "";
+  for (var i = 0; i < total; i++){
+    s += '<i class="' + (i < done ? "on" : (i === done ? "now" : "")) + '"></i>';
+  }
+  return '<div class="dots">' + s + '</div>';
+}
+function optRow(text, key, value){
+  var b = document.createElement("button");
+  b.type = "button";
+  b.className = "opt";
+  b.setAttribute("data-v", value);
+  b.innerHTML = '<span class="dot"></span>' +
+                (key ? '<span class="k">' + key + '</span>' : '') +
+                '<span>' + esc(text) + '</span>';
+  return b;
+}
+function scaleRow(items){
+  var wrap = document.createElement("div");
+  wrap.className = "scale";
+  for (var v = 1; v <= 7; v++){
+    var b = document.createElement("button");
+    b.type = "button";
+    b.textContent = v;
+    b.setAttribute("data-v", v);
+    wrap.appendChild(b);
+  }
+  var ends = document.createElement("div");
+  ends.className = "ends";
+  ends.innerHTML = "<span>" + t("lkLow") + "</span><span>" + t("lkHigh") + "</span>";
+  var box = document.createElement("div");
+  box.appendChild(wrap);
+  box.appendChild(ends);
+  return { box: box, wrap: wrap };
+}
+
+/* =====================================================================
+   5. 语言切换
+   ===================================================================== */
+function setLang(l){
+  UI.lang = l;
+  if (S) S.lang = l;
+  try { localStorage.setItem("aitp_lang", l); } catch(e){}
+  document.documentElement.lang = (l === "zh" ? "zh-CN" : "en");
+  var btns = document.querySelectorAll("#lang button");
+  for (var i = 0; i < btns.length; i++){
+    btns[i].classList.toggle("on", btns[i].getAttribute("data-l") === l);
+  }
+  document.getElementById("foottext").textContent = t("foot");
+  if (CURRENT) CURRENT();
+}
+
+/* =====================================================================
+   6. 页面：欢迎（含姓名 / 学号）
+   ===================================================================== */
+var PRE = { name: "", sid: "" };
+
+function screenWelcome(){
+  var d = h("div");
+  d.innerHTML =
+    '<h1>' + t("wTitle") + '</h1>' +
+    '<p class="dim" style="margin-bottom:26px">' + t("wSub") + '</p>' +
+    '<p style="font-size:18px;line-height:1.65">' + t("wLead") + '</p>' +
+    '<div class="note" style="margin:26px 0 30px"><ul style="margin:0">' +
+      '<li>' + t("wB1") + '</li>' +
+      '<li>' + t("wB2") + '</li>' +
+      '<li>' + t("wB3") + '</li>' +
+      '<li>' + t("wB4") + '</li>' +
+    '</ul></div>' +
+    '<div class="grid2">' +
+      '<div class="field"><label>' + t("wName") + ' <span style="color:#b3b8c0">· ' + t("wOptional") + '</span></label>' +
+        '<input type="text" id="pname" autocomplete="off" placeholder="—"></div>' +
+      '<div class="field"><label>' + t("wSid") + ' <span style="color:#b3b8c0">· ' + t("wOptional") + '</span></label>' +
+        '<input type="text" id="psid" autocomplete="off" placeholder="—"></div>' +
+    '</div>' +
+    '<p class="hint" style="margin-top:-6px">' + t("wAnon") + '</p>' +
+    '<div class="row"><button class="btn solid" id="go">' + t("start") + '</button></div>';
+  paint(d, 0, "");
+
+  var pn = document.getElementById("pname");
+  var ps = document.getElementById("psid");
+  pn.value = PRE.name; ps.value = PRE.sid;
+  pn.oninput = ps.oninput = function(){ PRE.name = pn.value; PRE.sid = ps.value; };
+
+  document.getElementById("go").onclick = function(){
+    S = newSession((pn.value || "").trim(), (ps.value || "").trim());
+    S.startedAt = Date.now();
+    go(screenConsent);
+  };
+}
+
+/* =====================================================================
+   7. 页面：知情同意
+   ===================================================================== */
+function screenConsent(){
+  var d = h("div");
+  d.innerHTML =
+    '<h2>' + t("cTitle") + '</h2>' +
+    '<p class="dim">' + t("cP1") + '</p>' +
+    '<h3>' + t("cH1") + '</h3><p>' + t("cP2") + '</p>' +
+    '<h3>' + t("cH2") + '</h3><p>' + t("cP3") + '</p>' +
+    '<h3>' + t("cH3") + '</h3><p>' + t("cP4") + '</p>' +
+    '<h3>' + t("cH4") + '</h3><p>' + t("cP5") + '</p>' +
+    '<label class="check" style="margin-top:8px"><input type="checkbox" id="agree"><span>' + t("cConsent") + '</span></label>' +
+    '<div class="row"><button class="btn solid" id="next" disabled>' + t("agree") + '</button>' +
+      '<button class="btn quiet" id="quit">' + t("disagree") + '</button></div>';
+  paint(d, 6, "");
+
+  var chk = document.getElementById("agree");
+  var btn = document.getElementById("next");
+  if (S._consented){ chk.checked = true; btn.disabled = false; }
+  chk.onchange = function(){
+    S._consented = chk.checked;
+    btn.disabled = !chk.checked;
+  };
+  btn.onclick = function(){ go(screenInfo); };
+  document.getElementById("quit").onclick = function(){
+    var q = h("div");
+    q.innerHTML = '<h2>' + t("quitTitle") + '</h2><p class="dim">' + t("quitBody") + '</p>';
+    paint(q, 0, "");
+    CURRENT = null;
+  };
+}
+
+/* =====================================================================
+   8. 页面：背景信息
+   ===================================================================== */
+function screenInfo(){
+  var d = h("div");
+  var saved = S.info || {};
+  d.innerHTML =
+    '<h2>' + t("iTitle") + '</h2><p class="dim">' + t("iSub") + '</p>' +
+    '<div style="margin-top:28px">' +
+      '<div class="field"><label>' + t("i1") + '</label><div id="slot_f1"></div></div>' +
+      '<div class="field"><label>' + t("i2") + '</label><div id="slot_f2"></div></div>' +
+      '<div class="field"><label>' + t("i3") + '</label><div id="slot_f3"></div></div>' +
+    '</div>' +
+    '<div class="row"><button class="btn solid" id="next" disabled>' + t("next") + '</button></div>';
+  paint(d, 12, "");
+
+  var g1 = segGroup("f1", T[UI.lang].i1o, saved.aiUsage);
+  var g2 = segGroup("f2", T[UI.lang].i2o, saved.major);
+  var g3 = segGroup("f3", T[UI.lang].i3o, saved.misled);
+  document.getElementById("slot_f1").appendChild(g1);
+  document.getElementById("slot_f2").appendChild(g2);
+  document.getElementById("slot_f3").appendChild(g3);
+
+  var ids = ["f1","f2","f3"];
+  var btn = document.getElementById("next");
+  function check(){
+    btn.disabled = ids.some(function(id){ return !segVal(id); });
+  }
+  ids.forEach(function(id){ document.getElementById(id).addEventListener("change", check); });
+  check();
+  btn.onclick = function(){
+    S.info = {
+      aiUsage: segVal("f1"),
+      major: segVal("f2"),
+      misled: segVal("f3")
+    };
+    persist();
+    go(screenInstructions);
+  };
+}
+
+/* =====================================================================
+   9. 页面：任务说明
+   ===================================================================== */
+function screenInstructions(){
+  var d = h("div");
+  d.innerHTML =
+    '<h2>' + t("sTitle") + '</h2>' +
+    '<p class="dim">' + t("sLead") + '</p>' +
+    '<h3>' + t("sH") + '</h3>' +
+    '<ul><li>' + t("sT1") + '</li><li>' + t("sT2") + '</li><li>' + t("sT3") + '</li></ul>' +
+    '<h3>' + t("sN") + '</h3>' +
+    '<ul><li>' + t("sN1") + '</li><li>' + t("sN2") + '</li><li>' + t("sN3") + '</li></ul>' +
+    '<div class="row"><button class="btn solid" id="next">' + t("sBtn") + '</button></div>';
+  paint(d, 18, "");
+  document.getElementById("next").onclick = function(){ go(screenPractice); };
+}
+
+/* =====================================================================
+   10. 页面：练习
+   ===================================================================== */
+function screenPractice(){
+  var d = h("div");
+  d.innerHTML =
+    '<div class="meta"><span class="chip">' + t("pChip") + '</span>' +
+      '<span class="counter">' + t("pMeta") + '</span></div>' +
+    '<p class="dim">' + t("pLead") + '</p>' +
+    '<div class="tw"><table class="data"><tr><th>S01</th><th>S02</th><th>S03</th><th>S04</th></tr>' +
+      '<tr><td>60</td><td>70</td><td>80</td><td>90</td></tr></table></div>' +
+    '<div class="ai"><div class="aihead"><div class="av">AI</div><div class="aname">Assistant</div></div>' +
+      '<div class="atext">' + (UI.lang === "zh" ? "这 4 位同学的平均分是 75 分。" : "The mean score of these four students is 75.") + '</div></div>' +
+    '<div class="opts" id="popt"></div><div id="pfb"></div>';
+  paint(d, 22, "");
+
+  var box = document.getElementById("popt");
+  var a = optRow(t("pAccept"), "", "accept");
+  var b = optRow(t("pReject"), "", "reject");
+  box.appendChild(a); box.appendChild(b);
+
+  function pick(){
+    a.disabled = b.disabled = true;
+    document.getElementById("pfb").innerHTML =
+      '<div class="note" style="margin-top:22px"><b>' + t("pFbTitle") + '</b><br>' +
+      '<span class="small">' + t("pFb") + '</span></div>' +
+      '<div class="row"><button class="btn solid" id="go">' + t("pGo") + '</button></div>';
+    document.getElementById("go").onclick = function(){
+      S.bi = 0; S.ii = 0;
+      go(screenBlockIntro);
+    };
+  }
+  a.onclick = function(){ a.classList.add("chosen"); pick(); };
+  b.onclick = function(){ b.classList.add("chosen"); pick(); };
+}
+
+/* =====================================================================
+   11. 试次主循环
+   ===================================================================== */
+/* =====================================================================
+   10b. 页面：每组开始前的过渡页（说明本组版本，避免“重复/卡住”的错觉）
+   ===================================================================== */
+function screenBlockIntro(){
+  var b = S.blocks[S.bi];
+  var task = TASKS[b.task];
+  var d = h("div");
+  d.innerHTML =
+    dots(S.bi, S.blocks.length) +
+    '<div class="meta"><span class="chip ' + task.chip + '">' + task.hypo + ' · ' + L(task.name) + '</span>' +
+      '<span class="counter">' + (S.bi + 1) + ' / ' + S.blocks.length + '</span></div>' +
+    '<h2>' + fill(t("biTitle"), { n: S.bi + 1 }) + '</h2>' +
+    '<p class="dim">' + L(task.scenario) + '</p>' +
+    '<div class="vercard">' +
+      '<span class="vlab">' + t("biVersion") + '</span>' +
+      '<b>' + L(task.condLabel[b.condition]) + '</b>' +
+      '<span class="vdesc">' + L(task.condDesc[b.condition]) + '</span>' +
+      '<span class="vnote">' + t("biNote") + '</span>' +
+    '</div>' +
+    '<div class="row"><button class="btn solid" id="go">' + t("biBtn") + '</button></div>';
+  paint(d, 22 + Math.round(S.bi / 6 * 68), "");
+  document.getElementById("go").onclick = function(){ go(screenTrial); };
+}
+
+function screenTrial(){
+  var b = S.blocks[S.bi];
+  var task = TASKS[b.task];
+  var mat = task.sets[b.set || 0];
+  var item = mat.items[S.ii];
+  var cue = b.condition === "cue";
+
+  if (!S.itemStart){
+    S.itemStart = Date.now();
+    S.cdEnd = cue ? 0 : (Date.now() + 8000);
+    S.paused = false;
+    S.detailShown = false;
+    S.decided = false;
+  }
+
+  var d = h("div");
+  var html = dots(S.bi, S.blocks.length) +
+    '<div class="meta"><span class="chip ' + task.chip + '">' + task.hypo + ' · ' + L(task.name) + '</span>' +
+    '<span class="counter">' + (S.bi + 1) + ' / ' + S.blocks.length + ' · ' + (S.ii + 1) + ' / ' + mat.items.length + '</span></div>';
+
+  if (S.ii === 0){
+    html += '<p class="dim" style="margin-bottom:20px">' + L(task.scenario) + '</p>';
+    if (b.task === "A"){
+      html += '<div class="tw"><table class="data"><tr><th>' + (UI.lang === "zh" ? "学号" : "Student") + '</th>' +
+              mat.scores.map(function(r){ return '<th>' + r[0] + '</th>'; }).join('') + '</tr><tr><th>' +
+              (UI.lang === "zh" ? "分数" : "Score") + '</th>' +
+              mat.scores.map(function(r){ return '<td>' + r[1] + '</td>'; }).join('') + '</tr></table></div>';
+    }
+  }
+
+  /* ---- A ---- */
+  if (b.task === "A"){
+    html += '<div class="ai"><div class="aihead"><div class="av">AI</div>' +
+            '<div class="aname">Assistant<em>' + L(task.name) + '</em></div></div>' +
+            '<div class="atext">' + (cue ? "" : t("certain")) + esc(L(item.text)) + '</div>';
+    if (cue){
+      html += '<div class="conf"><span>' + t("confLabel") + '</span>' +
+              '<span class="meter"><i style="width:' + item.conf + '%"></i></span>' +
+              '<b>' + item.conf + '%</b>' +
+              '<span style="margin-left:auto">' + t("confNote") + '</span></div>';
+    }
+    html += '</div><div class="opts" id="opt"></div>';
+  }
+
+  /* ---- B ---- */
+  if (b.task === "B"){
+    html += '<div class="ai"><div class="aihead"><div class="av">AI</div>' +
+            '<div class="aname">Assistant<em>' + L(task.name) + '</em></div></div>' +
+            '<div class="atext">' + (UI.lang === "zh" ? "我准备" : "I am about to ") + esc(L(item.text)) + '</div>' +
+            '<div class="conf"><span>' + (cue ? t("confirmReq") : t("autoQueued")) + '</span>' +
+            '<span style="margin-left:auto">' + (cue ? t("confirmNote") : (CONF.secs + t("autoNote"))) + '</span></div></div>';
+
+    if (cue){
+      html += '<div class="opts" id="opt"></div>';
+    } else if (!S.paused){
+      html += '<div class="cd" id="cdbox">' +
+                '<div class="cdtop">' + fill(t("cdText"), { n: '<b id="cdn">' + Math.ceil(Math.max(0, S.cdEnd - Date.now()) / 1000) + '</b>' }) + '</div>' +
+                '<div class="cdbar"><i id="cdbar"></i></div>' +
+                '<div class="cdact"><button class="btn" id="pause">' + t("cdPause") + '</button>' +
+                '<button class="btn" id="cancel">' + t("cdCancel") + '</button></div>' +
+              '</div>';
+    } else {
+      html += '<div class="cd"><div class="cdtop" style="margin-bottom:0">' + t("paused") + '</div>' +
+              '<div class="cdact"><button class="btn" id="run2">' + t("exec") + '</button>' +
+              '<button class="btn" id="skip2">' + t("noexec") + '</button></div></div>';
+    }
+    html += '<div id="dbox"></div>';
+  }
+
+  /* ---- C ---- */
+  if (b.task === "C"){
+    html += '<div style="font-size:15.5px;font-weight:600;margin-bottom:8px">' + esc(L(item.name)) + '</div>' +
+            '<div class="excerpt">' + esc(L(item.excerpt)) + '</div>' +
+            '<div class="ai"><div class="aihead"><div class="av">AI</div>' +
+            '<div class="aname">Assistant<em>' + L(task.name) + '</em></div></div>' +
+            '<div class="score"><b>' + item.score + '</b><span>/ 100</span></div>';
+    if (cue){
+      html += '<ul class="bd">';
+      item.bd.forEach(function(x){
+        html += '<li><span class="kk">' + (UI.lang === "zh" ? x[0] : x[1]) + '</span>' +
+                '<span class="bb"><i style="width:' + Math.round(x[2] / x[3] * 100) + '%"></i></span>' +
+                '<span class="vv">' + x[2] + '/' + x[3] + '</span></li>';
+      });
+      html += '</ul>';
+    }
+    html += '</div><div class="opts" id="opt"></div>';
+  }
+
+  d.innerHTML = html;
+  paint(d, 22 + Math.round(S.bi / 6 * 68), "");
+
+  /* ---- 选项 ---- */
+  var optBox = document.getElementById("opt");
+  if (optBox){
+    var labels, values;
+    if (b.task === "A"){ labels = [t("acceptA"), t("rejectA")]; values = ["accept","reject"]; }
+    if (b.task === "B"){ labels = [t("runB"), t("detailB"), t("skipB")]; values = ["execute","detail","skip"]; }
+    if (b.task === "C"){ labels = [t("acceptC"), t("rejectC")]; values = ["accept","reject"]; }
+    labels.forEach(function(lb, i){
+      var o = optRow(lb, String(i + 1), values[i]);
+      o.onclick = function(){
+        if (values[i] === "detail"){ showDetail(); return; }
+        record(values[i]);
+      };
+      optBox.appendChild(o);
+    });
+  }
+
+  /* ---- 倒计时 ---- */
+  if (b.task === "B" && !cue && !S.paused){
+    var timer = setInterval(function(){
+      var left = S.cdEnd - Date.now();
+      var barEl = document.getElementById("cdbar");
+      var nEl = document.getElementById("cdn");
+      if (!barEl) { clearInterval(timer); return; }
+      barEl.style.width = Math.max(0, left / (CONF.secs * 1000) * 100) + "%";
+      if (nEl) nEl.textContent = Math.ceil(Math.max(0, left) / 1000);
+      var boxEl = document.getElementById("cdbox");
+      if (boxEl) boxEl.classList.toggle("urgent", left < 3000);
+      if (left <= 0){ clearInterval(timer); record("auto_executed", { inspected: 0 }); }
+    }, 100);
+    S._timer = timer;
+    var pb = document.getElementById("pause");
+    var cb = document.getElementById("cancel");
+    if (pb) pb.onclick = function(){
+      clearInterval(timer); S.paused = true; showDetail();
+      var run2 = document.getElementById("run2"), skip2 = document.getElementById("skip2");
+      if (run2) run2.onclick = function(){ record("inspected_execute", { inspected: 1 }); };
+      if (skip2) skip2.onclick = function(){ record("inspected_skip", { inspected: 1 }); };
+    };
+    if (cb) cb.onclick = function(){ clearInterval(timer); record("revoked", { inspected: 0 }); };
+  }
+  if (b.task === "B" && !cue && S.paused){
+    var r2 = document.getElementById("run2"), s2 = document.getElementById("skip2");
+    if (r2) r2.onclick = function(){ record("inspected_execute", { inspected: 1 }); };
+    if (s2) s2.onclick = function(){ record("inspected_skip", { inspected: 1 }); };
+    showDetail(true);
+  }
+  /* 语言切换后恢复已展开的详情 */
+  if (b.task === "B" && S.detailShown && cue) showDetail(true);
+
+  function showDetail(silent){
+    var box = document.getElementById("dbox");
+    if (!box) return;
+    S.detailShown = true;
+    var extra = "";
+    if (b.task === "B" && cue && !silent){
+      extra = '<div class="row" style="margin-top:14px"><button class="btn" id="d1">' + t("exec") + '</button>' +
+              '<button class="btn" id="d2">' + t("noexec") + '</button></div>';
+    }
+    box.innerHTML = '<div class="note" style="margin-top:16px"><b>' + t("detailTitle") + '</b><br>' +
+                    '<span class="small" style="font-size:14px;color:#39414d">' + esc(L(item.detail)) + '</span></div>' + extra;
+    var d1 = document.getElementById("d1"), d2 = document.getElementById("d2");
+    if (d1) d1.onclick = function(){ record("inspected_execute", { inspected: 1 }); };
+    if (d2) d2.onclick = function(){ record("inspected_skip", { inspected: 1 }); };
+  }
+
+  function record(response, extra){
+    if (S._timer){ clearInterval(S._timer); S._timer = null; }
+    if (S.decided) return;
+    S.decided = true;
+    var row = {
+      block: S.bi + 1, task: b.task, hypothesis: task.hypo,
+      condition: b.condition, conditionLabel: L(task.condLabel[b.condition]),
+      item: S.ii + 1, stimSet: (b.set || 0) + 1, truth: item.truth, response: response,
+      inspected: extra && extra.inspected != null ? extra.inspected : "",
+      decisionMs: Date.now() - S.itemStart,
+      elapsedMs: Date.now() - S.startedAt
+    };
+    S.trials.push(row);
+    persist();
+
+    S.itemStart = 0; S.cdEnd = 0; S.paused = false; S.detailShown = false; S.decided = false;
+    if (S.ii + 1 < mat.items.length){ S.ii++; screenTrial(); }
+    else { S.ii = 0; S.lkAns = {}; go(screenLikert); }
+  }
+}
+
+/* =====================================================================
+   12. 页面：每个 block 后的量表
+   ===================================================================== */
+function screenLikert(){
+  var b = S.blocks[S.bi];
+  var task = TASKS[b.task];
+  var qs = LIKERT[b.task];
+
+  var d = h("div");
+  var html = dots(S.bi + 1, S.blocks.length) +
+    '<div class="meta"><span class="chip ' + task.chip + '">' + task.hypo + ' · ' + L(task.name) + '</span>' +
+    '<span class="counter">' + (S.bi + 1) + ' / ' + S.blocks.length + '</span></div>' +
+    '<div class="verchip">' + t("lkVer") + ' <b>' + L(task.condLabel[b.condition]) + '</b></div>' +
+    '<p class="dim" style="margin-bottom:30px">' + t("lkSub") + '</p>';
+  qs.forEach(function(q, i){
+    html += '<div class="lk" data-i="' + i + '"><div class="q">' + (i + 1) + '. ' + esc(L(q)) + '</div></div>';
+  });
+  html += '<div class="row"><button class="btn solid" id="next" disabled>' +
+          (S.bi + 1 < S.blocks.length ? t("nextBlock") : t("next")) + '</button></div>';
+  d.innerHTML = html;
+  paint(d, 22 + Math.round((S.bi + 1) / 6 * 68), "");
+
+  var btn = document.getElementById("next");
+  function refresh(){
+    btn.disabled = Object.keys(S.lkAns).length < qs.length;
+  }
+  qs.forEach(function(q, i){
+    var host = d.querySelector('.lk[data-i="' + i + '"]');
+    var sc = scaleRow();
+    host.appendChild(sc.box);
+    var btns = sc.wrap.querySelectorAll("button");
+    Array.prototype.forEach.call(btns, function(x){
+      if (S.lkAns[i] === x.getAttribute("data-v")) x.classList.add("on");
+      x.onclick = function(){
+        Array.prototype.forEach.call(btns, function(y){ y.classList.remove("on"); });
+        x.classList.add("on");
+        S.lkAns[i] = x.getAttribute("data-v");
+        refresh();
+      };
+    });
+  });
+  refresh();
+
+  btn.onclick = function(){
+    qs.forEach(function(q, i){
+      S.likert.push({
+        block: S.bi + 1, task: b.task, hypothesis: task.hypo,
+        condition: b.condition, conditionLabel: L(task.condLabel[b.condition]),
+        question: L(q), value: parseInt(S.lkAns[i], 10),
+        elapsedMs: Date.now() - S.startedAt
+      });
+    });
+    persist();
+    S.lkAns = {};
+    if (S.bi + 1 < S.blocks.length){ S.bi++; S.ii = 0; go(screenBlockIntro); }
+    else { go(screenSurvey); }
+  };
+}
+
+/* =====================================================================
+   13. 页面：总体问卷
+   ===================================================================== */
+function screenSurvey(){
+  var d = h("div");
+  var html = '<h2>' + t("vTitle") + '</h2><p class="dim" style="margin-bottom:26px">' + t("vSub") + '</p>' +
+    '<div class="field"><label>' + t("v1") + '</label><div id="m1"></div></div>';
+  GENERAL.forEach(function(q, i){
+    html += '<div class="lk" data-g="' + i + '"><div class="q">' + (i + 2) + '. ' + esc(L(q)) + '</div></div>';
+  });
+  html += '<div class="field" style="margin-top:26px"><label>' + t("vOpen") + '</label>' +
+          '<textarea id="open" placeholder="' + esc(t("vOpenPh")) + '"></textarea></div>' +
+          '<div class="row"><button class="btn solid" id="next" disabled>' + t("submit") + '</button></div>';
+  d.innerHTML = html;
+  paint(d, 94, "");
+
+  var btn = document.getElementById("next");
+  document.getElementById("m1").appendChild(segGroup("m1g", T[UI.lang].v1o, S.svAns.m1));
+  document.getElementById("open").value = S.lkOpen || "";
+  document.getElementById("open").oninput = function(){ S.lkOpen = this.value; };
+
+  function refresh(){
+    btn.disabled = !(segVal("m1g") && Object.keys(S.svAns).length >= GENERAL.length + 1);
+  }
+  document.getElementById("m1g").addEventListener("change", function(){ S.svAns.m1 = segVal("m1g"); refresh(); });
+
+  GENERAL.forEach(function(q, i){
+    var host = d.querySelector('.lk[data-g="' + i + '"]');
+    var sc = scaleRow();
+    host.appendChild(sc.box);
+    var btns = sc.wrap.querySelectorAll("button");
+    Array.prototype.forEach.call(btns, function(x){
+      if (S.svAns["g" + i] === x.getAttribute("data-v")) x.classList.add("on");
+      x.onclick = function(){
+        Array.prototype.forEach.call(btns, function(y){ y.classList.remove("on"); });
+        x.classList.add("on");
+        S.svAns["g" + i] = x.getAttribute("data-v");
+        refresh();
+      };
+    });
+  });
+  refresh();
+
+  btn.onclick = function(){
+    var e0 = Date.now() - S.startedAt;
+    S.survey.push({ measure: "manipulation_check", value: segVal("m1g"), elapsedMs: e0 });
+    GENERAL.forEach(function(q, i){
+      S.survey.push({ measure: L(q), value: parseInt(S.svAns["g" + i], 10), elapsedMs: e0 });
+    });
+    S.survey.push({ measure: "open_comment", value: S.lkOpen || "", elapsedMs: e0 });
+    persist();
+    go(screenDebrief);
+  };
+}
+
+/* =====================================================================
+   14. 页面：Debriefing
+   ===================================================================== */
+function screenDebrief(){
+  var d = h("div");
+  d.innerHTML =
+    '<h2>' + t("dTitle") + '</h2>' +
+    '<p>' + t("dP1") + '</p>' +
+    '<p>' + t("dP2") + '</p>' +
+    '<div class="note" style="margin:22px 0"><b>' + t("dH") + '</b><ul>' +
+      '<li>' + t("d1") + '</li><li>' + t("d2") + '</li><li>' + t("d3") + '</li></ul></div>' +
+    '<p>' + t("dP3") + '</p><p>' + t("dP4") + '</p>' +
+    '<div class="row"><button class="btn solid" id="next">' + t("finish") + '</button></div>';
+  paint(d, 97, "");
+  document.getElementById("next").onclick = function(){
+    S.finishedAt = Date.now();
+    persist();
+    go(screenDone);
+  };
+}
+
+/* =====================================================================
+   15. 页面：完成
+   ===================================================================== */
+function screenDone(){
+  var total = S.trials.length + S.likert.length + S.survey.length;
+  var auto = subEnabled();
+  var d = h("div");
+  d.innerHTML =
+    '<svg class="check-mark" viewBox="0 0 56 56" aria-hidden="true">' +
+      '<circle cx="28" cy="28" r="23"></circle>' +
+      '<path d="M18 29.5 L25 36.5 L38 21.5"></path>' +
+    '</svg>' +
+    '<h2>' + t("doneTitle") + '</h2>' +
+    '<p class="dim">' + t(auto ? "doneLeadSub" : "doneLead") + '</p>' +
+    '<div style="margin:26px 0 4px"><div class="code">' + S.pid + '</div></div>' +
+    (S.name || S.sid
+      ? '<p class="small" style="margin-top:14px">' + (S.name ? esc(S.name) : "") + ' ' + (S.sid ? esc(S.sid) : "") + '</p>'
+      : '') +
+    '<div class="stats">' +
+      '<div class="stat"><b>' + dur(S.finishedAt - S.startedAt) + '</b><span>' + t("doneTime") + '</span></div>' +
+      '<div class="stat"><b>' + total + '</b><span>' + t("doneRows") + '</span></div>' +
+      '<div class="stat"><b>' + S.trials.length + ' / ' + S.likert.length + ' / ' + S.survey.length + '</b>' +
+        '<span>trials / scales / survey</span></div>' +
+    '</div>' +
+    (auto
+      ? '<div class="sub busy" id="subcard"><span class="dotx"></span>' +
+          '<span class="subtxt" id="subtxt"><b>' + t("subBusy") + '</b>' +
+          '<span class="small">' + t("subBusyHint") + '</span></span></div>'
+      : '') +
+    '<div class="row">' +
+      '<button class="btn' + (auto ? "" : " solid") + '" id="dl">' + t("dl") + '</button>' +
+      '<button class="btn quiet" id="hide">' + t("showtxt") + '</button>' +
+      (auto ? '<button class="btn" id="subretry" style="display:none">' + t("subRetry") + '</button>' : '') +
+    '</div>' +
+    '<p class="hint" style="margin-top:16px"' + (auto ? ' id="donehint"' : '') + '>' +
+      t(auto ? "dlHint2" : "dlHint") + '</p>' +
+    '<div id="fb"></div>';
+  paint(d, 100, "");
+
+  document.getElementById("dl").onclick = function(){
+    downloadCSV([S.pid]);
+    document.getElementById("fb").innerHTML = '<div class="note" style="margin-top:18px">' + t("dlOk") + '</div>';
+  };
+  document.getElementById("hide").onclick = function(){ showText(buildCSV([S.pid])); };
+  if (auto){
+    doSubmit(SUB.autoRetry || 0);
+    var rb = document.getElementById("subretry");
+    if (rb) rb.onclick = function(){ rb.style.display = "none"; doSubmit(SUB.autoRetry || 0); };
+  }
+}
+
+/* =====================================================================
+   16. CSV
+   ===================================================================== */
+var HEAD = ["participant_id","record_type","block","task","hypothesis","condition","condition_label",
+            "item","truth","response","inspected","decision_ms","measure","value","text",
+            "elapsed_ms","language","timestamp","stim_set"];
+
+function cell(v){
+  if (v === null || v === undefined) return "";
+  var s = String(v);
+  return /[",\n\r]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
+}
+function row(arr){ return arr.map(cell).join(","); }
+
+function sessions(pids){
+  var out = [], live = (S && S.pid) ? S.pid : null;
+  Object.keys(localStorage).forEach(function(k){
+    if (k.indexOf("aitp_partial_") !== 0) return;
+    var pid = k.slice("aitp_partial_".length);
+    if (pids && pids.indexOf(pid) === -1) return;
+    try {
+      var o = JSON.parse(localStorage.getItem(k));
+      if (!o || !o.pid) return;
+      if (live && o.pid === live){
+        o.trials = S.trials; o.likert = S.likert; o.survey = S.survey;
+        o.info = S.info; o.blocks = S.blocks; o.assignment = S.assignment;
+        o.startedAt = S.startedAt; o.name = S.name; o.sid = S.sid;
+      }
+      out.push(o);
+    } catch(e){}
+  });
+  if (pids && live && pids.indexOf(live) !== -1 && !out.some(function(x){ return x.pid === live; })){
+    out.push({ pid: live, trials: S.trials, likert: S.likert, survey: S.survey, info: S.info,
+               blocks: S.blocks, assignment: S.assignment, startedAt: S.startedAt,
+               name: S.name, sid: S.sid });
+  }
+  out.sort(function(a, b){ return String(a.pid).localeCompare(String(b.pid)); });
+  return out;
+}
+
+function buildCSV(pids){
+  var rows = [row(HEAD)];
+  sessions(pids).forEach(function(s){
+    var ts = s.startedAt ? new Date(s.startedAt).toISOString() : "";
+    (s.trials || []).forEach(function(x){
+      rows.push(row([s.pid,"trial",x.block,x.task,x.hypothesis,x.condition,x.conditionLabel,
+        x.item,x.truth,x.response,(x.inspected === "" || x.inspected == null) ? "" : x.inspected,
+        x.decisionMs,"","","",x.elapsedMs != null ? x.elapsedMs : "",s.lang || "",ts,
+        x.stimSet != null ? x.stimSet : ""]));
+    });
+    (s.likert || []).forEach(function(x){
+      rows.push(row([s.pid,"likert",x.block,x.task,x.hypothesis,x.condition,x.conditionLabel,
+        "","","","","",x.question,x.value,"",x.elapsedMs != null ? x.elapsedMs : "",s.lang || "",ts,""]));
+    });
+    (s.survey || []).forEach(function(x){
+      var num = typeof x.value === "number";
+      rows.push(row([s.pid,"survey","","","","","","","","","","",x.measure,
+        num ? x.value : "", num ? "" : x.value, x.elapsedMs != null ? x.elapsedMs : "", s.lang || "", ts, ""]));
+    });
+    if (s.info){
+      ["aiUsage","major","misled"].forEach(function(k){
+        rows.push(row([s.pid,"info","","","","","","","","","","","bg_"+k,"",s.info[k]||"","",s.lang||"",ts,""]));
+      });
+    }
+    rows.push(row([s.pid,"info","","","","","","","","","","","bg_name","",s.name||"","",s.lang||"",ts,""]));
+    rows.push(row([s.pid,"info","","","","","","","","","","","bg_studentid","",s.sid||"","",s.lang||"",ts,""]));
+    if (s.blocks && s.blocks.length){
+      rows.push(row([s.pid,"info","","","","","","","","","","","order_schedule","",
+        s.blocks.map(function(b){ return b.task + "-" + b.condition + "#" + ((b.set || 0) + 1); }).join(" "),"",s.lang||"",ts,""]));
+      rows.push(row([s.pid,"info","","","","","","","","","","","assignment","",s.assignment||"","",s.lang||"",ts,""]));
+    }
+  });
+  return "\ufeff" + rows.join("\r\n");
+}
+
+function downloadCSV(pids){
+  var csv = buildCSV(pids);
+  var blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+  var url = URL.createObjectURL(blob);
+  var a = document.createElement("a");
+  a.href = url;
+  a.download = "aitp_" + pids.join("_") + ".csv";
+  document.body.appendChild(a);
+  a.click();
+  setTimeout(function(){ document.body.removeChild(a); URL.revokeObjectURL(url); }, 1200);
+  if (CONF.endpoint){
+    try { fetch(CONF.endpoint, { method: "POST", headers: { "Content-Type": "text/csv;charset=utf-8" }, body: csv }); } catch(e){}
+  }
+}
+
+function showText(txt){
+  var box = document.getElementById("modalbox");
+  box.innerHTML = '<h3 style="margin-top:0">Data (select all and copy)</h3>' +
+    '<p class="small">If the download was blocked, copy everything below and save it as a .csv file.</p>' +
+    '<textarea id="tx" readonly></textarea>' +
+    '<div class="row" style="margin-top:16px"><button class="btn solid" id="cp">Copy all</button>' +
+    '<button class="btn quiet" id="close">Close</button></div>';
+  document.getElementById("modal").classList.add("show");
+  var tx = document.getElementById("tx");
+  tx.value = txt;
+  document.getElementById("close").onclick = function(){ document.getElementById("modal").classList.remove("show"); };
+  document.getElementById("cp").onclick = function(){
+    tx.select();
+    try { document.execCommand("copy"); } catch(e){}
+    if (navigator.clipboard) { try { navigator.clipboard.writeText(txt); } catch(e){} }
+    this.textContent = UI.lang === "zh" ? "已复制" : "Copied";
+  };
+}
+
+/* =====================================================================
+   16b. 数据回传
+   ===================================================================== */
+function subEnabled(){
+  if (!SUB) return false;
+  if (SUB.provider === "web3forms")  return String(SUB.web3formsKey || "").trim().length > 0;
+  if (SUB.provider === "formsubmit") return String(SUB.formsubmitTo || "").trim().length > 0;
+  return false;
+}
+
+function b64utf8(str){
+  try {
+    if (window.TextEncoder){
+      var bytes = new TextEncoder().encode(str), bin = "";
+      for (var i = 0; i < bytes.length; i++) bin += String.fromCharCode(bytes[i]);
+      return btoa(bin);
+    }
+    return btoa(unescape(encodeURIComponent(str)));
+  } catch(e){ return ""; }
+}
+
+function buildPayload(){
+  var csv = buildCSV([S.pid]);
+  var secs = (S.startedAt && S.finishedAt) ? Math.round((S.finishedAt - S.startedAt) / 1000) : "";
+  var order = (S.blocks || []).map(function(b){ return b.task + ":" + b.condition; }).join(" > ");
+  return {
+    subject: "AITP · " + S.pid + " · " + (S.name || "anonymous") + (S.sid ? " · " + S.sid : ""),
+    session_id: S.pid,
+    participant_name: S.name || "",
+    student_id: S.sid || "",
+    language: S.lang,
+    started_at: S.startedAt ? new Date(S.startedAt).toISOString() : "",
+    finished_at:  S.finishedAt ? new Date(S.finishedAt).toISOString() : "",
+    duration_sec: secs,
+    block_order: order,
+    condition_first: S.condFirst,
+    n_trials: (S.trials || []).length,
+    n_likert: (S.likert || []).length,
+    n_survey: (S.survey || []).length,
+    csv: csv,
+    csv_b64: b64utf8(csv)
+  };
+}
+
+function postForm(url, payload){
+  return new Promise(function(resolve){
+    if (typeof fetch !== "function") { resolve({ ok: false, err: "fetch unavailable" }); return; }
+    var timer = setTimeout(function(){ resolve({ ok: false, err: "timeout" }); }, 12000);
+    fetch(url, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "Accept": "application/json" },
+      body: JSON.stringify(payload)
+    }).then(function(r){
+      return r.text().then(function(txt){
+        clearTimeout(timer);
+        var j = {};
+        try { j = JSON.parse(txt); } catch(e){}
+        var ok = r.ok && j.success !== false;
+        resolve({ ok: ok, status: r.status, body: txt.slice(0, 300) });
+      });
+    }).catch(function(e){
+      clearTimeout(timer);
+      resolve({ ok: false, err: String(e && e.message || e) });
+    });
+  });
+}
+
+function submitData(){
+  return new Promise(function(resolve){
+    if (!subEnabled() || !S || !S.finishedAt){ resolve({ ok: false, skipped: true }); return; }
+    if (S.submitted){ resolve({ ok: true, cached: true }); return; }
+    if (S._sending){ resolve({ ok: false, inflight: true }); return; }  // 已有请求在途，由它负责更新界面
+    S._sending = true;
+
+    var payload = buildPayload();
+    var url;
+    if (SUB.provider === "web3forms"){
+      url = "https://api.web3forms.com/submit";
+      payload.access_key = String(SUB.web3formsKey).trim();
+      payload.botcheck = "";
+      payload.from_name = "Human-AI Transparency Study";
+    } else {
+      url = "https://formsubmit.co/ajax/" + encodeURIComponent(String(SUB.formsubmitTo).trim());
+      payload._subject = payload.subject;
+      payload._template = "table";
+      payload._captcha = "false";
+    }
+    postForm(url, payload).then(function(res){
+      if (res.ok) S.submitted = true;
+      else S._sending = false;   // 失败后允许手动重试
+      resolve(res);
+    });
+  });
+}
+
+function doSubmit(triesLeft){
+  var card = document.getElementById("subcard");
+  if (!card) return;
+  card.className = "sub busy";
+  document.getElementById("subtxt").innerHTML =
+    '<b>' + t("subBusy") + '</b><span class="small">' + t("subBusyHint") + '</span>';
+
+  submitData().then(function(res){
+    if (res.inflight) return;   // 另一次请求在途，界面由它更新
+    if (res.ok){
+      card.className = "sub ok";
+      document.getElementById("subtxt").innerHTML =
+        '<b>' + t("subOk") + '</b><span class="small">' + t("subOkHint") + '</span>';
+      S.submitted = true;
+      persist();
+      try { localStorage.setItem("aitp_sent_" + S.pid, "1"); } catch(e){}
+      return;
+    }
+    if (triesLeft > 0){
+      setTimeout(function(){ doSubmit(triesLeft - 1); }, 2400);
+      return;
+    }
+    card.className = "sub bad";
+    document.getElementById("subtxt").innerHTML =
+      '<b>' + t("subFail") + '</b><span class="small">' + t("subFailHint") + '</span>';
+    var hint = document.getElementById("donehint");
+    if (hint) hint.textContent = t("dlHint");
+    var b = document.getElementById("subretry");
+    if (b) b.style.display = "";
+  });
+}
+
+/* =====================================================================
+   17. 研究者面板
+   ===================================================================== */
+document.getElementById("reslink").onclick = function(ev){
+  ev.preventDefault();
+  var list = sessions(null);
+  var box = document.getElementById("modalbox");
+  var htm = '<h3 style="margin-top:0">' + t("resTitle") + '</h3>' +
+            '<p class="small">' + fill(t("resBody"), { n: list.length }) + '</p>' +
+            '<p class="small" style="margin-top:-8px;color:' + (subEnabled() ? '#1c7c4a' : '#8a5b0d') + '">' +
+              (subEnabled() ? fill(t("resSubOn"), { p: SUB.provider }) : t("resSubOff")) + '</p>' +
+            '<div style="max-height:250px;overflow:auto;border:1px solid #e7e8ec;border-radius:12px;padding:8px 14px;font-size:13px">';
+  if (!list.length) htm += '<p class="small" style="margin:10px 0">' + t("resNone") + '</p>';
+  list.forEach(function(s){
+    htm += '<div style="padding:7px 0;border-bottom:1px solid #f2f3f5;font-variant-numeric:tabular-nums">' +
+           s.pid + (s.name ? ' · ' + esc(s.name) : '') + (s.sid ? ' · ' + esc(s.sid) : '') +
+           '<span style="float:right;color:#9aa1ab">' + (s.trials || []).length + '/24 · ' +
+           (s.likert || []).length + '/18 · ' + (s.survey || []).length + '/5</span></div>';
+  });
+  htm += '</div><div class="row" style="margin-top:18px">' +
+         '<button class="btn solid" id="exall">' + t("resExport") + '</button>' +
+         '<button class="btn" id="exview">' + t("resView") + '</button>' +
+         '<button class="btn quiet" id="close">' + t("resClose") + '</button></div>' +
+         '<div class="note warn" style="margin-top:20px;font-size:13px">' + t("resWarn") +
+         '<button class="btn" id="clear" style="margin-left:12px;padding:7px 14px;font-size:13px">' + t("resClear") + '</button></div>';
+  box.innerHTML = htm;
+  document.getElementById("modal").classList.add("show");
+
+  document.getElementById("close").onclick = function(){ document.getElementById("modal").classList.remove("show"); };
+  document.getElementById("exall").onclick = function(){ downloadCSV(list.map(function(s){ return s.pid; })); };
+  document.getElementById("exview").onclick = function(){ showText(buildCSV(list.map(function(s){ return s.pid; }))); };
+  document.getElementById("clear").onclick = function(){
+    if (!confirm(t("resConfirm"))) return;
+    Object.keys(localStorage).forEach(function(k){ if (k.indexOf("aitp_") === 0) localStorage.removeItem(k); });
+    alert(t("resCleared"));
+    document.getElementById("modal").classList.remove("show");
+  };
+};
+
+/* =====================================================================
+   18. 语言按钮 / 启动
+   ===================================================================== */
+document.querySelectorAll("#lang button").forEach(function(b){
+  b.onclick = function(){ setLang(b.getAttribute("data-l")); };
+});
+
+window.addEventListener("beforeunload", function(ev){
+  if (S && S.startedAt && !S.finishedAt){ ev.preventDefault(); ev.returnValue = ""; }
+});
+
+var CONF = { secs: 8, endpoint: "" };
+
+(function boot(){
+  var saved = null;
+  try { saved = localStorage.getItem("aitp_lang"); } catch(e){}
+  var lang = saved || ((navigator.language || "zh").toLowerCase().indexOf("zh") === 0 ? "zh" : "en");
+  UI.lang = lang;
+  document.documentElement.lang = (lang === "zh" ? "zh-CN" : "en");
+  document.querySelectorAll("#lang button").forEach(function(b){
+    b.classList.toggle("on", b.getAttribute("data-l") === lang);
+  });
+  document.getElementById("foottext").textContent = t("foot");
+  go(screenWelcome);
+})();
+</script>
+</body>
+</html>
