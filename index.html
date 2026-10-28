@@ -199,6 +199,9 @@
   table.data th, table.data td{border:1px solid var(--line); padding:9px 13px; text-align:center}
   table.data th{background:#fafbfc; font-weight:560; color:var(--muted); font-size:12px; letter-spacing:.04em}
   table.data td{font-weight:560}
+  .tw{overflow-x:auto; margin:0 0 18px; -webkit-overflow-scrolling:touch}
+  .tw.compact table.data{font-size:13px}
+  .tw.compact table.data th, .tw.compact table.data td{padding:7px 10px}
   /* ---------- AI card ---------- */
   .ai{border:1px solid var(--line); border-radius:14px; padding:20px 22px; background:#fcfcfd; margin:0 0 20px}
   .aihead{display:flex; align-items:center; gap:10px; margin-bottom:11px}
@@ -292,6 +295,8 @@
     .stat b{font-size:19px}
     table.data{font-size:11px}
     table.data th, table.data td{padding:6px 4px; font-size:11px}
+    .tw.compact table.data{font-size:10.5px; letter-spacing:-.01em}
+    .tw.compact table.data th, .tw.compact table.data td{padding:5px 3px}
     .ai{padding:16px 16px}
     .atext{font-size:15.5px}
     .opt{padding:14px 15px; font-size:15px}
@@ -1283,12 +1288,14 @@ function screenTrial(){
 
   if (S.ii === 0){
     html += '<p class="dim" style="margin-bottom:20px">' + L(task.scenario) + '</p>';
-    if (b.task === "A"){
-      html += '<div class="tw"><table class="data"><tr><th>' + (UI.lang === "zh" ? "学号" : "Student") + '</th>' +
-              mat.scores.map(function(r){ return '<th>' + r[0] + '</th>'; }).join('') + '</tr><tr><th>' +
-              (UI.lang === "zh" ? "分数" : "Score") + '</th>' +
-              mat.scores.map(function(r){ return '<td>' + r[1] + '</td>'; }).join('') + '</tr></table></div>';
-    }
+  }
+  /* 任务 A 的原始分数表：每一题都显示，避免被试必须记住 8 个数字 */
+  if (b.task === "A"){
+    html += '<div class="tw' + (S.ii === 0 ? "" : " compact") + '"><table class="data">' +
+            '<tr><th>' + (UI.lang === "zh" ? "学号" : "Student") + '</th>' +
+            mat.scores.map(function(r){ return '<th>' + r[0] + '</th>'; }).join('') + '</tr>' +
+            '<tr><th>' + (UI.lang === "zh" ? "分数" : "Score") + '</th>' +
+            mat.scores.map(function(r){ return '<td>' + r[1] + '</td>'; }).join('') + '</tr></table></div>';
   }
 
   /* ---- A ---- */
@@ -1386,10 +1393,9 @@ function screenTrial(){
     var pb = document.getElementById("pause");
     var cb = document.getElementById("cancel");
     if (pb) pb.onclick = function(){
-      clearInterval(timer); S.paused = true; showDetail();
-      var run2 = document.getElementById("run2"), skip2 = document.getElementById("skip2");
-      if (run2) run2.onclick = function(){ record("inspected_execute", { inspected: 1 }); };
-      if (skip2) skip2.onclick = function(){ record("inspected_skip", { inspected: 1 }); };
+      if (S.decided) return;
+      clearInterval(timer); S.paused = true;
+      screenTrial(); /* 重绘当前屏，渲染「已暂停」卡片（含 执行/不执行 按钮） */
     };
     if (cb) cb.onclick = function(){ clearInterval(timer); record("revoked", { inspected: 0 }); };
   }
