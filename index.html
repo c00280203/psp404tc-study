@@ -6,9 +6,10 @@
 <title>Human–AI Transparency Study · PSP404TC Lab5R</title>
 <style>
   :root{
-    --bg:#fbfbfc; --card:#ffffff; --ink:#0f1115; --muted:#6b7280; --faint:#9aa1ab;
+    --bg:#fbfbfc; --card:#ffffff; --ink:#0f1115; --muted:#565b66; --faint:#7b8290;
+    --glass:rgba(255,255,255,.6); --glass-soft:rgba(255,255,255,.42);
     --line:#e7e8ec; --line-2:#d8dae0; --accent:#1f6feb; --accent-soft:#eef4ff;
-    --warn:#8a5b0d; --warn-soft:#fdf8ef; --warn-line:#f0e3c8;
+    --warn:#7a4d09; --warn-soft:rgba(253,248,239,.72); --warn-line:#f0e3c8;
     --r:16px;
   }
   *{box-sizing:border-box; -webkit-tap-highlight-color:transparent}
@@ -18,14 +19,66 @@
     font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Inter","PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
     -webkit-font-smoothing:antialiased; text-rendering:optimizeLegibility;
   }
+  /* ---------- 极光背景（aurora，还原参考图渐变） ---------- */
+  .aurora{
+    position:fixed; inset:0; z-index:-2; pointer-events:none;
+    background:linear-gradient(178deg,
+      #d6c8a8 0%, #c2bdcd 9%, #aeb6da 17%, #bcbae0 27%, #cdbfe0 36%,
+      #e7d3e0 47%, #ecd6da 55%, #e0cbd6 64%, #cbb0d4 76%, #b3a1d7 87%, #d9a5cc 100%);
+  }
+  .aurora::before,.aurora::after,.blob{content:""; position:absolute; border-radius:50%; filter:blur(70px)}
+  .aurora::before{ /* 顶部暖金光斑 */
+    width:120vmax; height:52vmax; left:-15vmax; top:-22vmax;
+    background:radial-gradient(closest-side, rgba(235,213,150,.85), rgba(235,213,150,0) 70%);
+  }
+  .aurora::after{ /* 右上冷蓝紫光斑 */
+    width:95vmax; height:48vmax; right:-22vmax; top:-14vmax;
+    background:radial-gradient(closest-side, rgba(150,168,224,.75), rgba(150,168,224,0) 70%);
+  }
+  .blob.b1{ /* 中央粉色亮核 */
+    width:110vmax; height:60vmax; left:-5vmax; top:38%;
+    background:radial-gradient(closest-side, rgba(248,226,224,.9), rgba(248,226,224,0) 72%);
+  }
+  .blob.b2{ /* 底部左：深紫罗兰 */
+    width:95vmax; height:55vmax; left:-25vmax; bottom:-20vmax;
+    background:radial-gradient(closest-side, rgba(146,124,214,.8), rgba(146,124,214,0) 70%);
+  }
+  .blob.b3{ /* 底部右：粉橘 */
+    width:90vmax; height:50vmax; right:-18vmax; bottom:-16vmax;
+    background:radial-gradient(closest-side, rgba(238,164,196,.85), rgba(238,164,196,0) 70%);
+  }
+  .blob.b4{ /* 中左淡紫过渡，柔化接缝 */
+    width:70vmax; height:45vmax; left:-20vmax; top:20%;
+    background:radial-gradient(closest-side, rgba(178,178,222,.5), rgba(178,178,222,0) 70%);
+  }
+  @media (prefers-reduced-motion: no-preference){
+    .aurora::before,.aurora::after,.blob{animation:adrift 26s ease-in-out infinite alternate}
+    .blob.b1{animation-duration:34s; animation-delay:-8s}
+    .blob.b2{animation-duration:30s; animation-delay:-15s}
+    .blob.b3{animation-duration:28s; animation-delay:-5s}
+    .blob.b4{animation-duration:38s; animation-delay:-20s}
+  }
+  @keyframes adrift{
+    0%{transform:translate(0,0) scale(1)}
+    50%{transform:translate(2.5vmax,-1.5vmax) scale(1.06)}
+    100%{transform:translate(-2vmax,1.8vmax) scale(.97)}
+  }
+  /* 细腻噪点：防止渐变色带，过渡更丝滑 */
+  .grain{
+    position:fixed; inset:0; z-index:-1; pointer-events:none; opacity:.5;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)' opacity='0.05'/%3E%3C/svg%3E");
+  }
+  @media (max-width:480px){
+    .aurora::before,.aurora::after,.blob{filter:blur(52px)}
+  }
   /* ---------- top bar ---------- */
-  .top{position:sticky; top:0; z-index:30; background:rgba(251,251,252,.86); backdrop-filter:saturate(180%) blur(12px)}
+  .top{position:sticky; top:0; z-index:30; background:rgba(250,247,252,.62); backdrop-filter:saturate(180%) blur(18px); -webkit-backdrop-filter:saturate(180%) blur(18px)}
   .top .line{height:2px; background:#eceef1}
   .top .line i{display:block; height:100%; width:0; background:var(--ink); transition:width .5s cubic-bezier(.4,0,.2,1)}
   .top .inner{max-width:760px; margin:0 auto; padding:13px 24px; display:flex; align-items:center; gap:16px}
   .mark{font-size:12.5px; letter-spacing:.14em; text-transform:uppercase; color:var(--faint); font-weight:600}
   .spacer{flex:1}
-  .lang{display:flex; border:1px solid var(--line); border-radius:999px; padding:2px; background:#fff}
+  .lang{display:flex; border:1px solid rgba(255,255,255,.6); border-radius:999px; padding:2px; background:rgba(255,255,255,.55)}
   .lang button{
     border:0; background:transparent; font:inherit; font-size:12.5px; color:var(--muted);
     height:34px; padding:0 14px; display:inline-flex; align-items:center;
@@ -36,7 +89,10 @@
   /* ---------- layout ---------- */
   .stage{max-width:760px; margin:0 auto; padding:34px 24px 80px}
   .sheet{
-    background:var(--card); border:1px solid var(--line); border-radius:var(--r);
+    background:rgba(255,255,255,.58);
+    -webkit-backdrop-filter:blur(26px) saturate(1.6); backdrop-filter:blur(26px) saturate(1.6);
+    border:1px solid rgba(255,255,255,.62); border-radius:var(--r);
+    box-shadow:0 12px 40px rgba(100,80,140,.13);
     padding:44px 48px; animation:rise .34s cubic-bezier(.2,.7,.3,1);
   }
   @keyframes rise{from{opacity:0; transform:translateY(10px)} to{opacity:1; transform:none}}
@@ -83,7 +139,7 @@
   /* ---------- 提交状态 ---------- */
   .sub{
     display:flex; align-items:flex-start; gap:13px; margin:26px 0 0; padding:17px 19px;
-    border:1px solid var(--line); border-radius:13px; background:#fff; font-size:14px; line-height:1.5;
+    border:1px solid var(--line); border-radius:13px; background:var(--glass-soft); font-size:14px; line-height:1.5;
     animation:pop .35s cubic-bezier(.2,.7,.3,1) backwards;
   }
   .sub .dotx{flex:0 0 auto; width:17px; height:17px; margin-top:2px; border-radius:50%; border:2px solid var(--line-2); position:relative}
@@ -112,11 +168,11 @@
   hr{border:0; border-top:1px solid var(--line); margin:30px 0}
   /* ---------- buttons ---------- */
   .btn{
-    font:inherit; font-size:15px; font-weight:520; color:var(--ink); background:#fff;
+    font:inherit; font-size:15px; font-weight:520; color:var(--ink); background:var(--glass);
     border:1px solid var(--line-2); border-radius:11px; padding:13px 24px; cursor:pointer;
     transition:transform .12s ease, background .18s, border-color .18s, box-shadow .18s;
   }
-  .btn:hover{background:#f7f8f9; border-color:#c6c9d0}
+  .btn:hover{background:rgba(255,255,255,.82); border-color:#c6c9d0}
   .btn:active{transform:scale(.975)}
   .btn.solid{background:var(--ink); border-color:var(--ink); color:#fff}
   .btn.solid:hover{background:#252a33; border-color:#252a33; box-shadow:0 4px 14px rgba(15,17,21,.16)}
@@ -130,7 +186,7 @@
   .field{margin:0 0 20px}
   .field label{display:block; font-size:13.5px; color:var(--muted); margin-bottom:8px}
   input[type=text], select, textarea{
-    width:100%; font:inherit; font-size:15.5px; color:var(--ink); background:#fff;
+    width:100%; font:inherit; font-size:15.5px; color:var(--ink); background:var(--glass);
     border:1px solid var(--line-2); border-radius:11px; padding:12px 15px; transition:.18s;
   }
   input[type=text]:focus, select:focus, textarea:focus{
@@ -141,7 +197,7 @@
   /* ---------- 分段选择（代替下拉框） ---------- */
   .seg{display:flex; flex-wrap:wrap; gap:8px}
   .segbtn{
-    font:inherit; font-size:14.5px; color:var(--ink); background:#fff;
+    font:inherit; font-size:14.5px; color:var(--ink); background:var(--glass);
     border:1px solid var(--line-2); border-radius:999px; padding:10px 18px; cursor:pointer;
     transition:transform .14s cubic-bezier(.2,.7,.3,1), background .16s, border-color .16s, color .16s, box-shadow .16s;
     animation:pop .34s cubic-bezier(.2,.7,.3,1) backwards;
@@ -154,7 +210,7 @@
   .seg .segbtn:nth-child(6){animation-delay:.23s}
   .seg .segbtn:nth-child(7){animation-delay:.27s}
   .seg .segbtn:nth-child(8){animation-delay:.31s}
-  .segbtn:hover{border-color:#c6c9d0; background:#f7f8f9; transform:translateY(-1px)}
+  .segbtn:hover{border-color:#c6c9d0; background:rgba(255,255,255,.82); transform:translateY(-1px)}
   .segbtn:active{transform:scale(.94)}
   .segbtn.on{background:var(--ink); border-color:var(--ink); color:#fff; box-shadow:0 3px 12px rgba(15,17,21,.18)}
   .segbtn.on:hover{background:#252a33}
@@ -168,7 +224,7 @@
   }
   .verchip b{font-weight:600}
   .vercard{
-    border:1px solid var(--line); border-radius:14px; padding:20px 22px; margin:24px 0 4px;
+    border:1px solid rgba(255,255,255,.55); background:var(--glass-soft); border-radius:14px; padding:20px 22px; margin:24px 0 4px;
     animation:pop .38s cubic-bezier(.2,.7,.3,1) backwards; animation-delay:.1s;
   }
   .vercard .vlab{display:block; font-size:12px; letter-spacing:.1em; text-transform:uppercase; color:var(--faint); margin-bottom:6px}
@@ -179,16 +235,16 @@
     font-size:13.5px; color:var(--warn);
   }
   .check{display:flex; gap:13px; align-items:flex-start; cursor:pointer; padding:16px 18px; border:1px solid var(--line-2); border-radius:12px; transition:.18s}
-  .check:hover{border-color:#c6c9d0; background:#fafbfc}
+  .check:hover{border-color:#c6c9d0; background:rgba(255,255,255,.62)}
   .check input{margin:4px 0 0; width:21px; height:21px; accent-color:var(--ink); flex:0 0 auto; cursor:pointer}
   .check span{font-size:15px}
   /* ---------- notice ---------- */
-  .note{border:1px solid var(--line); background:#fafbfc; border-radius:12px; padding:18px 20px; font-size:14.5px}
+  .note{border:1px solid rgba(255,255,255,.55); background:var(--glass-soft); border-radius:12px; padding:18px 20px; font-size:14.5px}
   .note.warn{background:var(--warn-soft); border-color:var(--warn-line); color:#6b4a12}
   .note ul{margin:8px 0 0}
   /* ---------- meta chip ---------- */
   .meta{display:flex; align-items:center; gap:10px; margin-bottom:22px; flex-wrap:wrap}
-  .chip{font-size:11.5px; letter-spacing:.1em; text-transform:uppercase; font-weight:650; padding:4px 10px; border-radius:6px; background:#f2f3f5; color:var(--muted)}
+  .chip{font-size:11.5px; letter-spacing:.1em; text-transform:uppercase; font-weight:650; padding:4px 10px; border-radius:6px; background:rgba(255,255,255,.55); color:var(--muted)}
   .chip.a{background:#eef4ff; color:#1f57c3}
   .chip.b{background:#f4efff; color:#5b3bc7}
   .chip.c{background:#edf8f2; color:#0f7b4f}
@@ -197,13 +253,13 @@
   .tw{overflow-x:auto; margin:0 0 22px}
   table.data{border-collapse:collapse; font-size:14px; font-variant-numeric:tabular-nums; white-space:nowrap; width:100%}
   table.data th, table.data td{border:1px solid var(--line); padding:9px 13px; text-align:center}
-  table.data th{background:#fafbfc; font-weight:560; color:var(--muted); font-size:12px; letter-spacing:.04em}
+  table.data th{background:rgba(255,255,255,.5); font-weight:560; color:var(--muted); font-size:12px; letter-spacing:.04em}
   table.data td{font-weight:560}
   .tw{overflow-x:auto; margin:0 0 18px; -webkit-overflow-scrolling:touch}
   .tw.compact table.data{font-size:13px}
   .tw.compact table.data th, .tw.compact table.data td{padding:7px 10px}
   /* ---------- AI card ---------- */
-  .ai{border:1px solid var(--line); border-radius:14px; padding:20px 22px; background:#fcfcfd; margin:0 0 20px}
+  .ai{border:1px solid rgba(255,255,255,.55); border-radius:14px; padding:20px 22px; background:var(--glass-soft); margin:0 0 20px}
   .aihead{display:flex; align-items:center; gap:10px; margin-bottom:11px}
   .av{width:26px; height:26px; border-radius:8px; background:var(--ink); color:#fff; display:flex; align-items:center; justify-content:center; font-size:10.5px; font-weight:700; letter-spacing:.04em}
   .aname{font-size:13px; font-weight:600}
@@ -211,9 +267,9 @@
   .atext{font-size:16.5px; line-height:1.6}
   .conf{display:flex; align-items:center; gap:12px; margin-top:15px; padding-top:15px; border-top:1px dashed var(--line); font-size:12.5px; color:var(--muted); flex-wrap:wrap}
   .meter{flex:0 0 110px; height:5px; border-radius:99px; background:#eceef1; overflow:hidden}
-  .meter i{display:block; height:100%; background:#c8932e; border-radius:99px; transition:width .4s}
+  .meter i{display:block; height:100%; background:#c8932e; border-radius:99px; transition:width .62s cubic-bezier(.2,.7,.3,1)}
   .conf b{color:#8a5b0d; font-variant-numeric:tabular-nums; font-size:13px}
-  .excerpt{font-size:14.5px; color:#39414d; background:#fafbfc; border-left:2px solid var(--line-2); padding:14px 18px; margin-bottom:18px; border-radius:0 10px 10px 0}
+  .excerpt{font-size:14.5px; color:#2c3340; background:rgba(255,255,255,.48); border-left:2px solid var(--line-2); padding:14px 18px; margin-bottom:18px; border-radius:0 10px 10px 0}
   .score{display:flex; align-items:baseline; gap:9px; margin:2px 0 4px}
   .score b{font-size:38px; font-variant-numeric:tabular-nums; letter-spacing:-.03em; line-height:1.1}
   .score span{color:var(--faint); font-size:13px}
@@ -222,21 +278,23 @@
   .bd .kk{flex:0 0 96px}
   .bd .bb{flex:1; height:4px; background:#eceef1; border-radius:99px; overflow:hidden}
   .bd .bb i{display:block; height:100%; background:#9aa6c4; border-radius:99px}
-  .bd .vv{flex:0 0 44px; text-align:right; font-variant-numeric:tabular-nums; color:#39414d}
+  .bd .vv{flex:0 0 44px; text-align:right; font-variant-numeric:tabular-nums; color:#2c3340}
   /* ---------- options ---------- */
   .opts{display:flex; flex-direction:column; gap:10px; margin-top:6px}
   .opt{
     display:flex; align-items:center; gap:14px; width:100%; text-align:left; font:inherit; font-size:15.5px;
-    background:#fff; border:1px solid var(--line-2); border-radius:12px; padding:15px 18px; cursor:pointer;
+    background:var(--glass); border:1px solid var(--line-2); border-radius:12px; padding:15px 18px; cursor:pointer;
     transition:transform .12s ease, border-color .18s, background .18s;
   }
-  .opt:hover{border-color:#bfc3cb; background:#fafbfc}
+  .opt:hover{border-color:#bfc3cb; background:rgba(255,255,255,.78)}
   .opt:active{transform:scale(.99)}
   .opt .dot{width:15px; height:15px; border-radius:50%; border:1.5px solid var(--line-2); flex:0 0 auto; transition:.2s; position:relative}
   .opt:hover .dot{border-color:#9aa1ab}
-  .opt.chosen{border-color:var(--ink); background:#f7f8fa}
+  .opt.chosen{border-color:var(--ink); background:rgba(255,255,255,.88)}
   .opt.chosen .dot{border-color:var(--ink); background:var(--ink); box-shadow:inset 0 0 0 3px #fff}
   .opt .k{font-size:12px; color:var(--faint); min-width:16px; font-variant-numeric:tabular-nums}
+  /* 键盘快捷键提示 */
+  .kbdh{margin:14px 2px 0; font-size:12.5px; color:var(--muted); font-weight:500; letter-spacing:.02em}
   /* ---------- countdown ---------- */
   .cd{margin-top:18px; border:1px solid var(--warn-line); background:var(--warn-soft); border-radius:12px; padding:15px 18px}
   .cdtop{display:flex; align-items:baseline; gap:9px; font-size:13.5px; color:#6b4a12; margin-bottom:11px}
@@ -271,8 +329,8 @@
   .modal.show{display:flex}
   .modal .box{background:#fff; border-radius:16px; padding:26px; max-width:800px; width:100%; max-height:82vh; overflow:auto; animation:rise .22s}
   .modal textarea{width:100%; min-height:280px; font-family:ui-monospace,Menlo,monospace; font-size:11.5px; line-height:1.5}
-  .foot{max-width:760px; margin:0 auto; padding:0 24px 44px; font-size:12px; color:#b3b8c0; text-align:center}
-  .foot a{color:#a8aeb7; text-decoration:none; border-bottom:1px dotted #d5d8de}
+  .foot{max-width:760px; margin:0 auto; padding:0 24px 44px; font-size:12.5px; color:rgba(42,35,64,.78); text-align:center; font-weight:500}
+  .foot a{color:rgba(42,35,64,.88); text-decoration:none; border-bottom:1px dotted rgba(42,35,64,.45)}
   .foot a:hover{color:var(--ink)}
   @media (max-width:680px){
     .sheet{padding:30px 22px; border-radius:14px}
@@ -316,6 +374,13 @@
 </style>
 </head>
 <body>
+
+<div class="aurora"></div>
+<div class="blob b1"></div>
+<div class="blob b2"></div>
+<div class="blob b3"></div>
+<div class="blob b4"></div>
+<div class="grain"></div>
 
 <div class="top">
   <div class="line"><i id="bar"></i></div>
@@ -459,10 +524,12 @@ var T = {
     cdText: "将在 {n} 秒后自动执行",
     cdPause: "暂停并查看详情",
     cdCancel: "撤销执行",
-    paused: "已暂停，等你决定。",
+    pausedTxt: "已暂停 · 剩余 {n} 秒",
+    resumeRun: "继续运行",
     confLabel: "置信度",
     confNote: "该结论为自动生成，可能存在误差",
     certain: "我可以确定：",
+    kbdHint: "提示：可用键盘 {k} 快速作答",
 
     lkSub: "请根据刚才这一组的体验作答。1 = 非常不同意，7 = 非常同意。",
     lkLow: "非常不同意",
@@ -611,10 +678,12 @@ var T = {
     cdText: "Running automatically in {n}s",
     cdPause: "Pause and see details",
     cdCancel: "Cancel",
-    paused: "Paused — your call.",
+    pausedTxt: "Paused · {n}s left",
+    resumeRun: "Resume",
     confLabel: "Confidence",
     confNote: "Auto-generated — may be wrong",
     certain: "I am confident: ",
+    kbdHint: "Tip: press {k} to answer quickly",
 
     lkSub: "Answer for the block you just completed. 1 = strongly disagree, 7 = strongly agree.",
     lkLow: "Strongly disagree",
@@ -953,8 +1022,8 @@ function rnd(n){
 function newSession(name, sid){
   var idx = bump();
   var pid = "P" + (idx < 10 ? "0" + idx : idx) + "-" + rnd(3);
-  // 纯随机分配：任务顺序 6 种等概率，组内条件先后等概率；实际日程记入 CSV 便于报告核对
-  var order = PERMS[Math.floor(Math.random() * PERMS.length)].slice();
+  // 任务顺序固定 H1→H2→H3（2026-10-28 决定）；组内条件先后与材料组配对仍随机，保留部分平衡
+  var order = ["A","B","C"];
   var firstCue = Math.random() < 0.5;
   var blocks = [];
   for (var i = 0; i < order.length; i++){
@@ -1011,6 +1080,7 @@ function dur(ms){
   return UI.lang === "zh" ? (m + " 分 " + r + " 秒") : (m + "m " + r + "s");
 }
 function paint(node, pct, label){
+  window.onkeydown = null;
   app.innerHTML = "";
   app.appendChild(node);
   bar.style.width = pct + "%";
@@ -1275,10 +1345,11 @@ function screenTrial(){
 
   if (!S.itemStart){
     S.itemStart = Date.now();
-    S.cdEnd = cue ? 0 : (Date.now() + 8000);
+    S.cdEnd = cue ? 0 : (Date.now() + CONF.secs * 1000);
     S.paused = false;
     S.detailShown = false;
     S.decided = false;
+    S.pausedViewed = false;
   }
 
   var d = h("div");
@@ -1304,9 +1375,9 @@ function screenTrial(){
             '<div class="aname">Assistant<em>' + L(task.name) + '</em></div></div>' +
             '<div class="atext">' + (cue ? "" : t("certain")) + esc(L(item.text)) + '</div>';
     if (cue){
-      html += '<div class="conf"><span>' + t("confLabel") + '</span>' +
-              '<span class="meter"><i style="width:' + item.conf + '%"></i></span>' +
-              '<b>' + item.conf + '%</b>' +
+      html += '<div class="conf' + (item.conf < 50 ? " low" : "") + '"><span>' + t("confLabel") + '</span>' +
+              '<span class="meter"><i data-w="' + item.conf + '" style="width:0%"></i></span>' +
+              '<b data-n="' + item.conf + '">0%</b>' +
               '<span style="margin-left:auto">' + t("confNote") + '</span></div>';
     }
     html += '</div><div class="opts" id="opt"></div>';
@@ -1330,8 +1401,9 @@ function screenTrial(){
                 '<button class="btn" id="cancel">' + t("cdCancel") + '</button></div>' +
               '</div>';
     } else {
-      html += '<div class="cd"><div class="cdtop" style="margin-bottom:0">' + t("paused") + '</div>' +
-              '<div class="cdact"><button class="btn" id="run2">' + t("exec") + '</button>' +
+      var leftNow = Math.max(0, Math.ceil((S.cdEnd - Date.now()) / 1000));
+      html += '<div class="cd"><div class="cdtop" style="margin-bottom:0">' + fill(t("pausedTxt"), { n: leftNow }) + '</div>' +
+              '<div class="cdact"><button class="btn solid" id="resume2">' + t("resumeRun") + '</button>' +
               '<button class="btn" id="skip2">' + t("noexec") + '</button></div></div>';
     }
     html += '<div id="dbox"></div>';
@@ -1359,6 +1431,21 @@ function screenTrial(){
   d.innerHTML = html;
   paint(d, 22 + Math.round(S.bi / 6 * 68), "");
 
+  /* H1 置信度动画：充能 + 滚动计数 */
+  var mi = document.querySelector(".conf .meter i"), mb = document.querySelector(".conf b[data-n]");
+  if (mi && mb){
+    var target = parseInt(mb.getAttribute("data-n"), 10);
+    requestAnimationFrame(function(){ requestAnimationFrame(function(){ mi.style.width = target + "%"; }); });
+    var t0 = null;
+    var stepCount = function(ts){
+      if (!t0) t0 = ts;
+      var pr = Math.min(1, (ts - t0) / 620);
+      mb.textContent = Math.round(target * (1 - Math.pow(1 - pr, 3))) + "%";
+      if (pr < 1) requestAnimationFrame(stepCount);
+    };
+    requestAnimationFrame(stepCount);
+  }
+
   /* ---- 选项 ---- */
   var optBox = document.getElementById("opt");
   if (optBox){
@@ -1366,14 +1453,32 @@ function screenTrial(){
     if (b.task === "A"){ labels = [t("acceptA"), t("rejectA")]; values = ["accept","reject"]; }
     if (b.task === "B"){ labels = [t("runB"), t("detailB"), t("skipB")]; values = ["execute","detail","skip"]; }
     if (b.task === "C"){ labels = [t("acceptC"), t("rejectC")]; values = ["accept","reject"]; }
+    /* 键盘快捷键提示（桌面端，需在 labels 赋值之后生成） */
+    if (window.matchMedia && matchMedia("(min-width: 900px)").matches){
+      var ks = labels.map(function(_, i){ return i + 1; }).join(" / ");
+      optBox.insertAdjacentHTML("afterend", '<div class="kbdh">' + esc(fill(t("kbdHint"), { k: ks })) + '</div>');
+    }
     labels.forEach(function(lb, i){
       var o = optRow(lb, String(i + 1), values[i]);
       o.onclick = function(){
+        if (S.decided) return;
         if (values[i] === "detail"){ showDetail(); return; }
-        record(values[i]);
+        S.decided = true;
+        if (S._timer){ clearInterval(S._timer); S._timer = null; }
+        o.classList.add("picked");
+        optBox.style.pointerEvents = "none";
+        setTimeout(function(){ commitRow(values[i]); }, 240);
       };
       optBox.appendChild(o);
     });
+    /* 键盘快捷键（桌面端） */
+    window.onkeydown = function(ev){
+      if (S.decided) return;
+      var idx = { "1": 0, "2": 1, "3": 2 }[ev.key];
+      if (idx == null || idx >= values.length) return;
+      var tgt = optBox.children[idx];
+      if (tgt) tgt.click();
+    };
   }
 
   /* ---- 倒计时 ---- */
@@ -1387,21 +1492,37 @@ function screenTrial(){
       if (nEl) nEl.textContent = Math.ceil(Math.max(0, left) / 1000);
       var boxEl = document.getElementById("cdbox");
       if (boxEl) boxEl.classList.toggle("urgent", left < 3000);
-      if (left <= 0){ clearInterval(timer); record("auto_executed", { inspected: 0 }); }
+      if (left <= 0){
+        clearInterval(timer);
+        if (S.decided) return;
+        S.decided = true;
+        var bx = document.getElementById("cdbox");
+        if (bx){
+          bx.classList.add("execflash");
+          setTimeout(function(){ commitRow("auto_executed", { inspected: S.pausedViewed ? 1 : 0 }); }, 480);
+        } else {
+          commitRow("auto_executed", { inspected: S.pausedViewed ? 1 : 0 });
+        }
+      }
     }, 100);
     S._timer = timer;
     var pb = document.getElementById("pause");
     var cb = document.getElementById("cancel");
     if (pb) pb.onclick = function(){
       if (S.decided) return;
-      clearInterval(timer); S.paused = true;
-      screenTrial(); /* 重绘当前屏，渲染「已暂停」卡片（含 执行/不执行 按钮） */
+      clearInterval(timer); S.paused = true; S.pausedViewed = true;
+      screenTrial(); /* 重绘当前屏，渲染「已暂停」卡片（可继续运行或取消） */
     };
-    if (cb) cb.onclick = function(){ clearInterval(timer); record("revoked", { inspected: 0 }); };
+    if (cb) cb.onclick = function(){ clearInterval(timer); record("revoked", { inspected: S.pausedViewed ? 1 : 0 }); };
   }
   if (b.task === "B" && !cue && S.paused){
-    var r2 = document.getElementById("run2"), s2 = document.getElementById("skip2");
-    if (r2) r2.onclick = function(){ record("inspected_execute", { inspected: 1 }); };
+    var r2 = document.getElementById("resume2"), s2 = document.getElementById("skip2");
+    if (r2) r2.onclick = function(){
+      if (S.decided) return;
+      if (S.cdEnd - Date.now() < 1200) S.cdEnd = Date.now() + 1200; /* 防止恢复瞬间立即执行 */
+      S.paused = false;
+      screenTrial(); /* 回到倒计时，从剩余时间继续 */
+    };
     if (s2) s2.onclick = function(){ record("inspected_skip", { inspected: 1 }); };
     showDetail(true);
   }
@@ -1428,6 +1549,9 @@ function screenTrial(){
     if (S._timer){ clearInterval(S._timer); S._timer = null; }
     if (S.decided) return;
     S.decided = true;
+    commitRow(response, extra);
+  }
+  function commitRow(response, extra){
     var row = {
       block: S.bi + 1, task: b.task, hypothesis: task.hypo,
       condition: b.condition, conditionLabel: L(task.condLabel[b.condition]),
@@ -1439,7 +1563,7 @@ function screenTrial(){
     S.trials.push(row);
     persist();
 
-    S.itemStart = 0; S.cdEnd = 0; S.paused = false; S.detailShown = false; S.decided = false;
+    S.itemStart = 0; S.cdEnd = 0; S.paused = false; S.detailShown = false; S.decided = false; S.pausedViewed = false;
     if (S.ii + 1 < mat.items.length){ S.ii++; screenTrial(); }
     else { S.ii = 0; S.lkAns = {}; go(screenLikert); }
   }
@@ -1917,7 +2041,7 @@ window.addEventListener("beforeunload", function(ev){
   if (S && S.startedAt && !S.finishedAt){ ev.preventDefault(); ev.returnValue = ""; }
 });
 
-var CONF = { secs: 8, endpoint: "" };
+var CONF = { secs: 10, endpoint: "" };
 
 (function boot(){
   var saved = null;
