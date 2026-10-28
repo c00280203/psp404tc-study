@@ -8,6 +8,7 @@
   :root{
     --bg:#fbfbfc; --card:#ffffff; --ink:#0f1115; --muted:#565b66; --faint:#7b8290;
     --glass:rgba(255,255,255,.6); --glass-soft:rgba(255,255,255,.42);
+    --bline:rgba(84,74,116,.38); --bline-soft:rgba(84,74,116,.26);
     --line:#e7e8ec; --line-2:#d8dae0; --accent:#1f6feb; --accent-soft:#eef4ff;
     --warn:#7a4d09; --warn-soft:rgba(253,248,239,.72); --warn-line:#f0e3c8;
     --r:16px;
@@ -78,7 +79,7 @@
   .top .inner{max-width:760px; margin:0 auto; padding:13px 24px; display:flex; align-items:center; gap:16px}
   .mark{font-size:12.5px; letter-spacing:.14em; text-transform:uppercase; color:var(--faint); font-weight:600}
   .spacer{flex:1}
-  .lang{display:flex; border:1px solid rgba(255,255,255,.6); border-radius:999px; padding:2px; background:rgba(255,255,255,.55)}
+  .lang{display:flex; border:1px solid var(--bline-soft); border-radius:999px; padding:2px; background:rgba(255,255,255,.55)}
   .lang button{
     border:0; background:transparent; font:inherit; font-size:12.5px; color:var(--muted);
     height:34px; padding:0 14px; display:inline-flex; align-items:center;
@@ -91,7 +92,7 @@
   .sheet{
     background:rgba(255,255,255,.58);
     -webkit-backdrop-filter:blur(26px) saturate(1.6); backdrop-filter:blur(26px) saturate(1.6);
-    border:1px solid rgba(255,255,255,.62); border-radius:var(--r);
+    border:1px solid var(--bline-soft); border-radius:var(--r);
     box-shadow:0 12px 40px rgba(100,80,140,.13);
     padding:44px 48px; animation:rise .34s cubic-bezier(.2,.7,.3,1);
   }
@@ -139,7 +140,7 @@
   /* ---------- 提交状态 ---------- */
   .sub{
     display:flex; align-items:flex-start; gap:13px; margin:26px 0 0; padding:17px 19px;
-    border:1px solid var(--line); border-radius:13px; background:var(--glass-soft); font-size:14px; line-height:1.5;
+    border:1px solid var(--bline-soft); border-radius:13px; background:var(--glass-soft); font-size:14px; line-height:1.5;
     animation:pop .35s cubic-bezier(.2,.7,.3,1) backwards;
   }
   .sub .dotx{flex:0 0 auto; width:17px; height:17px; margin-top:2px; border-radius:50%; border:2px solid var(--line-2); position:relative}
@@ -169,7 +170,7 @@
   /* ---------- buttons ---------- */
   .btn{
     font:inherit; font-size:15px; font-weight:520; color:var(--ink); background:var(--glass);
-    border:1px solid var(--line-2); border-radius:11px; padding:13px 24px; cursor:pointer;
+    border:1px solid var(--bline-soft); border-radius:11px; padding:13px 24px; cursor:pointer;
     transition:transform .12s ease, background .18s, border-color .18s, box-shadow .18s;
   }
   .btn:hover{background:rgba(255,255,255,.82); border-color:#c6c9d0}
@@ -188,7 +189,7 @@
   input[type=text], select, textarea{
     width:100%; font:inherit; font-size:15.5px; color:var(--ink);
     background:rgba(255,255,255,.48);
-    border:1px solid rgba(255,255,255,.75); border-radius:11px; padding:12px 15px; transition:.18s;
+    border:1px solid var(--bline-soft); border-radius:11px; padding:12px 15px; transition:.18s;
     box-shadow:0 2px 10px rgba(100,80,140,.07), inset 0 1px 0 rgba(255,255,255,.65);
   }
   input[type=text]:focus, select:focus, textarea:focus{
@@ -202,7 +203,7 @@
   .seg{display:flex; flex-wrap:wrap; gap:8px}
   .segbtn{
     font:inherit; font-size:14.5px; color:var(--ink); background:var(--glass);
-    border:1px solid var(--line-2); border-radius:999px; padding:10px 18px; cursor:pointer;
+    border:1px solid var(--bline-soft); border-radius:999px; padding:10px 18px; cursor:pointer;
     transition:transform .14s cubic-bezier(.2,.7,.3,1), background .16s, border-color .16s, color .16s, box-shadow .16s;
     animation:pop .34s cubic-bezier(.2,.7,.3,1) backwards;
   }
@@ -228,7 +229,7 @@
   }
   .verchip b{font-weight:600}
   .vercard{
-    border:1px solid rgba(255,255,255,.55); background:var(--glass-soft); border-radius:14px; padding:20px 22px; margin:24px 0 4px;
+    border:1px solid var(--bline-soft); background:var(--glass-soft); border-radius:14px; padding:20px 22px; margin:24px 0 4px;
     animation:pop .38s cubic-bezier(.2,.7,.3,1) backwards; animation-delay:.1s;
   }
   .vercard .vlab{display:block; font-size:12px; letter-spacing:.1em; text-transform:uppercase; color:var(--faint); margin-bottom:6px}
@@ -238,12 +239,12 @@
     display:block; margin-top:14px; padding-top:14px; border-top:1px dashed var(--line);
     font-size:13.5px; color:var(--warn);
   }
-  .check{display:flex; gap:13px; align-items:flex-start; cursor:pointer; padding:16px 18px; border:1px solid var(--line-2); border-radius:12px; transition:.18s}
+  .check{display:flex; gap:13px; align-items:flex-start; cursor:pointer; padding:16px 18px; border:1px solid var(--bline-soft); border-radius:12px; transition:.18s}
   .check:hover{border-color:#c6c9d0; background:rgba(255,255,255,.62)}
   .check input{margin:4px 0 0; width:21px; height:21px; accent-color:var(--ink); flex:0 0 auto; cursor:pointer}
   .check span{font-size:15px}
   /* ---------- notice ---------- */
-  .note{border:1px solid rgba(255,255,255,.55); background:var(--glass-soft); border-radius:12px; padding:18px 20px; font-size:14.5px}
+  .note{border:1px solid var(--bline-soft); background:var(--glass-soft); border-radius:12px; padding:18px 20px; font-size:14.5px}
   .note.warn{background:var(--warn-soft); border-color:var(--warn-line); color:#6b4a12}
   .note ul{margin:8px 0 0}
   /* ---------- meta chip ---------- */
@@ -256,14 +257,14 @@
   /* ---------- data table ---------- */
   .tw{overflow-x:auto; margin:0 0 22px}
   table.data{border-collapse:collapse; font-size:14px; font-variant-numeric:tabular-nums; white-space:nowrap; width:100%}
-  table.data th, table.data td{border:1px solid var(--line); padding:9px 13px; text-align:center}
+  table.data th, table.data td{border:1px solid var(--bline); padding:9px 13px; text-align:center}
   table.data th{background:rgba(255,255,255,.5); font-weight:560; color:var(--muted); font-size:12px; letter-spacing:.04em}
   table.data td{font-weight:560}
   .tw{overflow-x:auto; margin:0 0 18px; -webkit-overflow-scrolling:touch}
   .tw.compact table.data{font-size:13px}
   .tw.compact table.data th, .tw.compact table.data td{padding:7px 10px}
   /* ---------- AI card ---------- */
-  .ai{border:1px solid rgba(255,255,255,.55); border-radius:14px; padding:20px 22px; background:var(--glass-soft); margin:0 0 20px}
+  .ai{border:1px solid var(--bline-soft); border-radius:14px; padding:20px 22px; background:var(--glass-soft); margin:0 0 20px}
   .aihead{display:flex; align-items:center; gap:10px; margin-bottom:11px}
   .av{width:26px; height:26px; border-radius:8px; background:var(--ink); color:#fff; display:flex; align-items:center; justify-content:center; font-size:10.5px; font-weight:700; letter-spacing:.04em}
   .aname{font-size:13px; font-weight:600}
@@ -287,7 +288,7 @@
   .opts{display:flex; flex-direction:column; gap:10px; margin-top:6px}
   .opt{
     display:flex; align-items:center; gap:14px; width:100%; text-align:left; font:inherit; font-size:15.5px;
-    background:var(--glass); border:1px solid var(--line-2); border-radius:12px; padding:15px 18px; cursor:pointer;
+    background:var(--glass); border:1px solid var(--bline-soft); border-radius:12px; padding:15px 18px; cursor:pointer;
     transition:transform .12s ease, border-color .18s, background .18s;
   }
   .opt:hover{border-color:#bfc3cb; background:rgba(255,255,255,.78)}
@@ -300,7 +301,7 @@
   /* 键盘快捷键提示 */
   .kbdh{margin:14px 2px 0; font-size:12.5px; color:var(--muted); font-weight:500; letter-spacing:.02em}
   /* ---------- countdown ---------- */
-  .cd{margin-top:18px; border:1px solid var(--warn-line); background:var(--warn-soft); border-radius:12px; padding:15px 18px}
+  .cd{margin-top:18px; border:1px solid rgba(196,152,66,.5); background:var(--warn-soft); border-radius:12px; padding:15px 18px}
   .cdtop{display:flex; align-items:baseline; gap:9px; font-size:13.5px; color:#6b4a12; margin-bottom:11px}
   .cdtop b{font-size:19px; font-variant-numeric:tabular-nums; min-width:1.3em; text-align:right; letter-spacing:-.02em}
   .cdbar{height:3px; background:#eadfc7; border-radius:99px; overflow:hidden}
