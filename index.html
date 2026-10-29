@@ -72,6 +72,11 @@
     100%{transform:translate(-2vmax,1.8vmax) scale(.97)}
   }
   /* 细腻噪点：防止渐变色带，过渡更丝滑 */
+  .aurora-cap{
+    position:absolute; left:0; top:0; width:100%; height:150px; pointer-events:none; z-index:9;
+    /* 顶部恒定奶金（与 theme-color 一致），向下淡出融入极光 —— 保证浏览器顶部染色区与页面零色差 */
+    background:linear-gradient(180deg, #ccc4b1 0%, #ccc4b1 38%, rgba(204,196,177,0) 100%);
+  }
   .grain{
     position:fixed; left:0; top:0; right:0; bottom:0; z-index:-1; pointer-events:none; opacity:.5; overflow:hidden;
     background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)' opacity='0.05'/%3E%3C/svg%3E");
@@ -387,7 +392,7 @@
 </head>
 <body>
 
-<div class="aurora"><div class="blob b1"></div><div class="blob b2"></div><div class="blob b3"></div><div class="blob b4"></div></div>
+<div class="aurora"><div class="blob b1"></div><div class="blob b2"></div><div class="blob b3"></div><div class="blob b4"></div><div class="aurora-cap"></div></div>
 <div class="grain"></div>
 
 <div class="top">
